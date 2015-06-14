@@ -25,6 +25,7 @@ class TotAffMatcher(object):
         self.m = Model(str(self.id) + ": iterative b-matching")
         self.prev_sols = []
         self.prev_affs = []
+        self.m.setParam('OutputFlag',0)
 
         # primal variables
         self.lp_vars = []
@@ -81,7 +82,10 @@ class TotAffMatcher(object):
         self.save_reviewer_affinity()
 
     def status(self):
-        return "deprecated"
+        return m.status
+
+    def turn_on_verbosity(self):
+        self.m.setParam('OutputFlag', 1)
 
     def save_reviewer_affinity(self):
         per_rev_aff = np.zeros((self.n_rev, 1))

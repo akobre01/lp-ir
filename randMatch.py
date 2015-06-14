@@ -1,12 +1,12 @@
 import numpy as np
-from IterativeMatcher import IterativeMatcher
+from TotAffMatcher import TotAffMatcher
 from matplotlib import pyplot as plt
 
-# PARAMETERS
-n_rev = 40
-n_pap = 60
-alpha = 5
-beta = 3
+# PARAMETERS (inspired by EMNLP)
+n_rev = 500
+n_pap = 900
+alpha = 6    # reviewers cannot review more than alpha papers
+beta = 3     # each paper must be reviewed beta times
 
 nConsts = 20
 n_exps = 10
@@ -20,7 +20,7 @@ for e in range(n_exps):
     pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
     arbitraryConsts = np.random.choice(len(pairs), nConsts, replace=False)
 
-    prob = IterativeMatcher(n_rev, n_pap, alpha, beta, weights)
+    prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
     prob.solve()
 
     n_diffs = []
