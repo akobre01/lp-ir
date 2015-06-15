@@ -28,6 +28,8 @@ class FairMatcher(object):
         self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
         self.m.setParam('OutputFlag',0)
 
+        self.ms_constr_prefix = "ms"
+
         # primal variables
         self.lp_vars = []
         for i in range(self.n_rev):
@@ -52,29 +54,40 @@ class FairMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) == self.beta, "p" + str(p))
 
-        # (paper) fairness constraints
+        # (paper) makespan constraints
         for p in range(self.n_pap):
-            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, "fair-p" + str(p))
+            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
+
+    def change_makespan(self, new_makespan):
+        for c in self.m.getConstrs():
+            if c.getAttr("ConstrName").startswith(self.ms_constr_prefix):
+                self.m.remove(c)
+                self.m.update()
+
+        for p in range(self.n_pap):
+            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= new_makespan, self.ms_constr_prefix + str(p))
+        self.makespan = new_makespan
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10):
         if mx == -1:
             mx = self.alpha
-        if itr <= 0:
+        if itr <= 0 or mn >= mx:
             return self
 
         prv = self.makespan
         target = (mn + mx) / 2.0
-        print "OLD MAKESPAN: " + str(self.makespan)
-        print "NEW MAKESPAN: " + str(target)
-        new_prob = FairMatcher(self.n_rev, self.n_pap, self.alpha, self.beta, self.weights, target)
-        new_prob.m.optimize()
+        self.change_makespan(target)
+        self.m.optimize()
+        print self.m.status
 
-        if new_prob.m.status == GRB.INFEASIBLE:
-            print "INFEASIBLE"
-            return self.find_makespan_bin(mn, target, itr - 1)
+        if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
+            print "FEASIBLE; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
+            return self.find_makespan_bin(target, mx, itr -1)
         else:
-            print "FEASIBLE"
-            return new_prob.find_makespan_bin(target, mx, itr -1)
+            print "INFEASIBLE; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
+            self.change_makespan(prv)
+            return self.find_makespan_bin(mn, target, itr - 1)
+
 
     def var_name(self,i,j):
         return "x_" + str(i) + "," + str(j)
@@ -132,7 +145,10 @@ if __name__ == "__main__":
     init_makespan = 0
 
     x = FairMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
-    new_prob = x.find_makespan_bin(0, alpha, 10)
-    print new_prob.makespan
-    new_prob.m.optimize()
-    print new_prob.status()
+    x.find_makespan_bin(0, alpha, 10)
+    print x.makespan
+    x.m.optimize()
+    print x.status()
+
+    for p in range(x.n_pap):
+        assert sum([ x.m.getVarByName(x.var_name(i,p)).x * x.weights[i][p] for i in range(x.n_rev) ]) >= x.makespan
