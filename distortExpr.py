@@ -33,7 +33,6 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
             (next_i, next_j) = pairs[arbitraryConsts[i]]
             prob.add_hard_const(next_i, next_j)
             prob.solve()
-            print prob.objective_val()
             objectives.append(prob.objective_val())
 
             # calculate the number of variables that changed between the current and previous sols
@@ -67,10 +66,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
 #    ind = np.arange(len(mean_affs))
 #    width = 0.2
 #    plt.bar(ind + width, mean_affs, width, yerr=std_affs)
-    plt.hist(mean_affs, bins=alpha * 10)
-    plt.xlabel("Iteration")
-    plt.ylabel("Objective Value")
-
+    plt.hist(mean_affs, bins=alpha * 20)
+    plt.xlabel("Reviewer Affinity")
+    plt.ylabel("# of Sols")
     plt.show()
 
 if __name__ == "__main__":
