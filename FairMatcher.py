@@ -10,7 +10,7 @@ class FairMatcher(object):
       n_Rev - the number of reviewers
       n_Pap - the number of papers
       alpha - the maximum number of papers any reviewer can be assigned
-      beta - the (minimum) number of reviewers any paper can be assigned
+      beta - the number of reviews required per paper
       weights - the compatibility between each reviewer and each paper.
                 This should be a numpy matrix of dimension  n_rev x n_pap.
     """
@@ -29,6 +29,7 @@ class FairMatcher(object):
         self.m.setParam('OutputFlag',0)
 
         self.ms_constr_prefix = "ms"
+        self.user_ms_constr_prefix = "ums"
 
         # primal variables
         self.lp_vars = []
@@ -69,9 +70,11 @@ class FairMatcher(object):
         self.makespan = new_makespan
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10):
+        print "CURRENT MAKESPAN: " + str(self.makespan)
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
+            self.m.optimize()
             return self
 
         prv = self.makespan
@@ -103,6 +106,14 @@ class FairMatcher(object):
         prevVal = solution[self.var_name(i,j)]
 
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
+
+    def add_adeq_const(self, paper):
+        solution = self.sol_dict()
+        prevVal = solution[self.var_name(i,j)]
+        prev_score = sum([ x.m.getVarByName(x.var_name(i,paper)).x * x.weights[i][paper] for i in range(x.n_rev) ])
+        max_increase = float(self.beta) - prev_score
+        self.m.addConstr(sum([ self.lp_vars[i][paper] * self.weights[i][paper] for i in range(self.n_rev) ]) >=
+                         min(float(beta), prev_score + max_increase / 10.0), self.user_ms_constr_prefix + str(p))
 
     def num_diffs(self, sol1, sol2):
         count = 0

@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from TotAffMatcher import TotAffMatcher
 from FairMatcher import FairMatcher
 
-def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False):
+def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False, samp_beta=False):
     all_diffs = []
     all_objectives = []
     all_affs = []
@@ -19,7 +19,10 @@ def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verb
     for e in range(n_exps):
         print "Running Experiment: " + str(e)
         # draw a new set of weights
-        weights = np.random.rand(n_rev, n_pap)
+        if samp_beta:
+            weights = np.random.beta(10,10,(n_rev, n_pap))
+        else:
+            weights = np.random.rand(n_rev, n_pap)
 
         # sample new constraints
         pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
@@ -30,7 +33,7 @@ def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verb
 
         init_makespan = 0
         fair_prob = FairMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
-        fair_prob.find_makespan_bin(0, alpha, 8)
+        fair_prob.find_makespan_bin(0, alpha, 10)
 
         print "MAKESPAN: " + str(fair_prob.makespan)
 
@@ -47,16 +50,18 @@ def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verb
         fair_objs = []
 
         # add in each of the new constraints (1 by 1 for now) and resolve the problem
-        for i in range(0, n_consts):
-            print "\tAdding constraint: " + str(i)
-            (next_i, next_j) = pairs[arbitraryConsts[i]]
+        constr_per_itr = 5
+        for i in range(0, n_consts, constr_per_itr):
+            for j in range(constr_per_itr):
+                print "\tAdding constraint: " + str(i + j)
+                (next_i, next_j) = pairs[arbitraryConsts[i]]
+                prob.add_hard_const(next_i, next_j)
+                fair_prob.add_hard_const(next_i, next_j)
 
-            prob.add_hard_const(next_i, next_j)
             prob.solve()
 
-            fair_prob.add_hard_const(next_i, next_j)
             fair_prob.change_makespan(0)
-            fair_prob.find_makespan_bin(0, 8, 10)
+            fair_prob.find_makespan_bin(0, alpha, 10)
             print "MAKESPAN: " + str(fair_prob.makespan)
             print fair_prob.status()
             fair_prob.solve()
@@ -131,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('experiments', type=int, help='the number of experiment repetitions')
     parser.add_argument('constraints', type=int, help='the number of constraints to add')
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
+    parser.add_argument('-b', '--beta', help='draw weights from a beta distribution (parameters 2,2)', action='store_true')
 
     args = parser.parse_args()
 
@@ -141,4 +147,4 @@ if __name__ == "__main__":
     alpha = math.ceil((n_pap * beta) / float(n_rev))    # reviwer cannot review > alpha
     n_consts = args.constraints
     n_exps = args.experiments
-    runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose)
+    runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose, args.beta)

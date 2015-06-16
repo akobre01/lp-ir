@@ -4,7 +4,7 @@ import math
 from TotAffMatcher import TotAffMatcher
 from matplotlib import pyplot as plt
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False):
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False, normal=False):
     all_diffs = []
     all_objectives = []
     all_affs = []
@@ -12,7 +12,10 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
     for e in range(n_exps):
         print "Running Experiment: " + str(e)
         # draw a new set of weights
-        weights = np.random.rand(n_rev, n_pap)
+        if normal:
+            weights = np.random.randn(n_rev, n_pap)
+        else:
+            weights = np.random.rand(n_rev, n_pap)
 
         # sample new constraints
         pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
@@ -79,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('experiments', type=int, help='the number of experiment repetitions')
     parser.add_argument('constraints', type=int, help='the number of constraints to add')
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
+    parser.add_argument('-gauss', '--gaussian', help='draw weights from a normal distribution', action='store_true')
 
     args = parser.parse_args()
 
@@ -89,4 +93,4 @@ if __name__ == "__main__":
     alpha = math.ceil((n_pap * beta) / float(n_rev))    # reviwer cannot review > alpha
     n_consts = args.constraints
     n_exps = args.experiments
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose)
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose, args.gaussian)
