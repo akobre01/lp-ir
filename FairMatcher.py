@@ -70,7 +70,6 @@ class FairMatcher(object):
         self.makespan = new_makespan
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10):
-        print "CURRENT MAKESPAN: " + str(self.makespan)
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
@@ -80,14 +79,14 @@ class FairMatcher(object):
         prv = self.makespan
         target = (mn + mx) / 2.0
         self.change_makespan(target)
+        print "\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan)
         self.m.optimize()
-        print self.m.status
 
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
-            print "FEASIBLE; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
+            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
             return self.find_makespan_bin(target, mx, itr -1)
         else:
-            print "INFEASIBLE; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
+            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
             self.change_makespan(prv)
             return self.find_makespan_bin(mn, target, itr - 1)
 
@@ -104,7 +103,7 @@ class FairMatcher(object):
     def add_hard_const(self, i, j):
         solution = self.sol_dict()
         prevVal = solution[self.var_name(i,j)]
-
+        print "\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
     def add_adeq_const(self, paper):

@@ -63,7 +63,7 @@ class TotAffMatcher(object):
     def add_hard_const(self, i, j):
         solution = self.sol_dict()
         prevVal = solution[self.var_name(i,j)]
-
+        print "\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
     def num_diffs(self, sol1, sol2):
