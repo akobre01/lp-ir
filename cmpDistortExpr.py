@@ -7,6 +7,9 @@ from matplotlib import pyplot as plt
 from TotAffMatcher import TotAffMatcher
 from FairMatcher import FairMatcher
 
+import weights as wgts
+
+
 def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2):
     all_diffs = []
     all_objectives = []
@@ -20,21 +23,12 @@ def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=
         print "Running Experiment: " + str(e)
         # draw a new set of weights
         if w_samp == 'beta':
-            weights = np.random.beta(bp1, bp2, (n_rev, n_pap))
+            weights = wgts.fromBeta(n_rev, n_pap, bp1, bp2)
         elif w_samp == 'per_rev':
-            weights = []
-            reviewer_alpha = 2
-            for i in range(n_rev):
-                reviewer_skill = np.random.beta(bp1, bp2)
-                reviewer_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / reviewer_skill
-                weights.append(np.random.beta(reviewer_alpha, reviewer_beta, n_pap))
-            weights = np.array(weights)
-
-            print weights.shape
+            weights = wgts.skillBased(n_rev, n_pap, bp1, bp2)
         else:
-            weights = np.random.rand(n_rev, n_pap)
+            weights = wgts.fromUni(n_rev, n_pap)
 
-        # weights = 100.0 * weights
         # sample new constraints
         pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
         arbitraryConsts = np.random.choice(len(pairs), itrs * constr_per_itr, replace=False)
@@ -46,7 +40,6 @@ def runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=
         fair_prob = FairMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
 
         if verbose:
-            print "I'm In"
             prob.turn_on_verbosity()
             fair_prob.turn_on_verbosity()
 
