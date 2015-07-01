@@ -1,10 +1,13 @@
 import argparse
 import numpy as np
 import math
+
 from TotAffMatcher import TotAffMatcher
 from matplotlib import pyplot as plt
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False, normal=False):
+import weights as wgts
+
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False, w_samp=None, bp1=2, bp2=2):
     all_diffs = []
     all_objectives = []
     all_affs = []
@@ -12,10 +15,12 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
     for e in range(n_exps):
         print "Running Experiment: " + str(e)
         # draw a new set of weights
-        if normal:
-            weights = np.random.randn(n_rev, n_pap)
+        if w_samp == 'beta':
+            weights = wgts.fromBeta(n_rev, n_pap, bp1, bp2)
+        elif w_samp == 'per_rev':
+            weights = wgts.skillBased(n_rev, n_pap, bp1, bp2)
         else:
-            weights = np.random.rand(n_rev, n_pap)
+            weights = wgts.fromUni(n_rev, n_pap)
 
         # sample new constraints
         pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
@@ -75,6 +80,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
     plt.show()
 
 if __name__ == "__main__":
+    beta_param1 = 0.5
+    beta_param2 = 5
+
     parser = argparse.ArgumentParser(description='Experiment Parameters.')
     parser.add_argument('reviewers', type=int, help='the number of reviewers')
     parser.add_argument('papers', type=int, help='the number of papers')
@@ -82,7 +90,8 @@ if __name__ == "__main__":
     parser.add_argument('experiments', type=int, help='the number of experiment repetitions')
     parser.add_argument('constraints', type=int, help='the number of constraints to add')
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
-    parser.add_argument('-gauss', '--gaussian', help='draw weights from a normal distribution', action='store_true')
+    parser.add_argument('-b', '--beta', help='draw weights from a beta distribution (parameters ' + str(beta_param1) + ',' + str(beta_param2) + ')', action='store_true')
+    parser.add_argument('-p', '--per_reviewer', help='draw weights per reviewer', action='store_true')
 
     args = parser.parse_args()
 
@@ -93,4 +102,7 @@ if __name__ == "__main__":
     alpha = math.ceil((n_pap * beta) / float(n_rev))    # reviwer cannot review > alpha
     n_consts = args.constraints
     n_exps = args.experiments
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose, args.gaussian)
+    w_samp = 'beta' if args.beta else None
+    w_samp = 'per_rev' if args.per_reviewer else None
+
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose, w_samp)
