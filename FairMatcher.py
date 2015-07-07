@@ -26,7 +26,10 @@ class FairMatcher(object):
         self.prev_sols = []
         self.prev_affs = []
         self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
-        self.m.setParam('OutputFlag',0)
+
+        self.m.setParam('OutputFlag', 0)
+        self.m.setParam('MIPGap', 0.02)
+        self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
         self.user_ms_constr_prefix = "ums"
