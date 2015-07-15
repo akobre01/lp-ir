@@ -62,6 +62,8 @@ class FairMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
 
+        self.m.update()
+
     def change_makespan(self, new_makespan):
         for c in self.m.getConstrs():
             if c.getAttr("ConstrName").startswith(self.ms_constr_prefix):
@@ -71,6 +73,7 @@ class FairMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= new_makespan, self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
+        self.m.update()
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10):
         if mx == -1:
@@ -82,7 +85,9 @@ class FairMatcher(object):
         prv = self.makespan
         target = (mn + mx) / 2.0
         self.change_makespan(target)
+
         print "\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan)
+
         self.m.optimize()
 
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
