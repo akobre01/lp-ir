@@ -7,13 +7,14 @@ from matplotlib import pyplot as plt
 
 import weights as wgts
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose=False, w_samp=None, bp1=2, bp2=2):
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2):
     all_diffs = []
     all_objectives = []
     all_affs = []
 
     for e in range(n_exps):
         print "Running Experiment: " + str(e)
+
         # draw a new set of weights
         if w_samp == 'beta':
             weights = wgts.fromBeta(n_rev, n_pap, bp1, bp2)
@@ -22,9 +23,12 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
         else:
             weights = wgts.fromUni(n_rev, n_pap)
 
+        # print heat map of reviewer weights
+#        wgts.showWeights(weights)
+
         # sample new constraints
         pairs = [ (i,j) for i in range(n_rev) for j in range(n_pap) ]
-        arbitraryConsts = np.random.choice(len(pairs), n_consts, replace=False)
+        arbitraryConsts = np.random.choice(len(pairs), itrs * constr_per_itr, replace=False)
 
         # construct new problem instance and solve for initial solution
         prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
@@ -36,10 +40,11 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
         objectives = []
 
         # add in each of the new constraints (1 by 1 for now) and resolve the problem
-        for i in range(0, n_consts):
-            print "\tAdding constraint: " + str(i)
-            (next_i, next_j) = pairs[arbitraryConsts[i]]
-            prob.add_hard_const(next_i, next_j)
+        for i in range(0, itrs):
+            for j in range(constr_per_itr):
+                print "\tAdding constraint: " + str(i * constr_per_itr + j)
+                (next_i, next_j) = pairs[arbitraryConsts[i * constr_per_itr + j]]
+                prob.add_hard_const(next_i, next_j)
             prob.solve()
             objectives.append(prob.objective_val())
 
@@ -81,14 +86,15 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, verbose
 
 if __name__ == "__main__":
     beta_param1 = 0.5
-    beta_param2 = 5
+    beta_param2 = 2
 
     parser = argparse.ArgumentParser(description='Experiment Parameters.')
     parser.add_argument('reviewers', type=int, help='the number of reviewers')
     parser.add_argument('papers', type=int, help='the number of papers')
     parser.add_argument('reviews_per_paper', type=int, help='the number of reviews per paper')
     parser.add_argument('experiments', type=int, help='the number of experiment repetitions')
-    parser.add_argument('constraints', type=int, help='the number of constraints to add')
+    parser.add_argument('itrs', type=int, help='the number of iterations to run')
+    parser.add_argument('consts_per_itr', type=int, help='the number of constraints to add each iteration')
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
     parser.add_argument('-b', '--beta', help='draw weights from a beta distribution (parameters ' + str(beta_param1) + ',' + str(beta_param2) + ')', action='store_true')
     parser.add_argument('-p', '--per_reviewer', help='draw weights per reviewer', action='store_true')
@@ -100,9 +106,9 @@ if __name__ == "__main__":
     n_pap = args.papers
     beta = args.reviews_per_paper
     alpha = math.ceil((n_pap * beta) / float(n_rev))    # reviwer cannot review > alpha
-    n_consts = args.constraints
+    itrs = args.itrs
     n_exps = args.experiments
     w_samp = 'beta' if args.beta else None
-    w_samp = 'per_rev' if args.per_reviewer else None
+    w_samp = 'per_rev' if args.per_reviewer else w_samp
 
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, n_consts, n_exps, args.verbose, w_samp)
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2)

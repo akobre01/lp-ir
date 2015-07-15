@@ -21,10 +21,16 @@ def showWeights(weights):
     paper_order = np.array(sorted(weights.T, key=lambda row: np.sum(row))).T
     cMap = plt.get_cmap("Blues")
 
-    plt.subplot(1,2,1)
+    plt.subplot(2,1,1)
     reviewer_heatmap = plt.pcolor(reviewer_order, cmap=cMap)
     plt.colorbar(reviewer_heatmap)
-    plt.subplot(1,2,2)
+    plt.title("Reviewer-paper Affinities")
+    plt.xlabel("Papers")
+    plt.ylabel("Reviewers")
+    plt.subplot(2,1,2)
     paper_heatmap = plt.pcolor(paper_order, cmap=cMap)
     plt.colorbar(paper_heatmap)
+    plt.title("Reviewer-paper Affinities")
+    plt.xlabel("Papers")
+    plt.ylabel("Reviewers")
     plt.show()

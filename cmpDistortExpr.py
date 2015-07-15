@@ -161,5 +161,5 @@ if __name__ == "__main__":
     itrs = args.itrs
     n_exps = args.experiments
     w_samp = 'beta' if args.beta else None
-    w_samp = 'per_rev' if args.per_reviewer else None
+    w_samp = 'per_rev' if args.per_reviewer else w_samp
     runCmpDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2)
