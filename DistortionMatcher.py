@@ -45,8 +45,6 @@ class DistortionMatcher(object):
             for j in range(self.n_pap):
                 self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY, name=self.var_name(i,j)))
 
-        self.m.update()
-
         # set the objective (this could be sped up if need be by incorporating it into the previous loop)
         obj = LinExpr()
         for i in range(self.n_rev):
@@ -66,6 +64,8 @@ class DistortionMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
 
+        self.m.update()
+
     def reset_distortion_obj(self):
         prev_solution = self.prev_sols[-1]
         obj = LinExpr()
@@ -76,6 +76,7 @@ class DistortionMatcher(object):
                 else:
                     obj += self.lp_vars[i][j]              # if the variable was a 0 try to keep it a 0
         self.m.setObjective(obj, GRB.MINIMIZE)             # the new problem is a minimization problem
+        self.m.update()
 
     def change_makespan(self, new_makespan):
         for c in self.m.getConstrs():
@@ -86,6 +87,7 @@ class DistortionMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= new_makespan, self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
+        self.m.update()
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10):
         if mx == -1:
@@ -139,13 +141,17 @@ class DistortionMatcher(object):
         return count
 
     # if you've already solved the problem and have an initial solution, go to phase 2
-    def solve(self):
+    def solve(self, mn=0, mx=-1, itr=10):
         if self.init_sol == False:
             self.init_sol = True
 
         else:
             self.reset_distortion_obj()
 
+        if mx <= 0:
+            mx = self.alpha * np.max(self.weights)
+
+        self.find_makespan_bin(mn, mx, itr)
         self.m.optimize()
 
         sol = {}
