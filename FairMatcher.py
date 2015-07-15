@@ -15,7 +15,7 @@ class FairMatcher(object):
                 This should be a numpy matrix of dimension  n_rev x n_pap.
     """
 
-    def __init__(self, n_rev, n_pap, alpha, beta, weights, makespan):
+    def __init__(self, n_rev, n_pap, alpha, beta, weights, makespan=0):
         self.n_rev = n_rev
         self.n_pap = n_pap
         self.alpha = alpha
@@ -124,7 +124,21 @@ class FairMatcher(object):
                 count += 1
         return count
 
-    def solve(self):
+    # solve optimization with whatever the current makespan is
+    def solve_with_current_makespan(self):
+        self.m.optimize()
+        sol = {}
+        for v in self.m.getVars():
+            sol[v.varName] = v.x
+        self.prev_sols.append(sol)
+        self.save_reviewer_affinity()
+
+    # find an appropriate makespan using binary search and solve
+    def solve(self, mn=0, mx=-1, itr=10):
+        if mx <= 0:
+            mx = self.alpha * np.max(self.weights)
+
+        self.find_makespan_bin(mn, mx, itr)
         self.m.optimize()
         sol = {}
         for v in self.m.getVars():

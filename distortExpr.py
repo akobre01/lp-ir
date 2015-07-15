@@ -3,11 +3,13 @@ import numpy as np
 import math
 
 from TotAffMatcher import TotAffMatcher
+from FairMatcher import FairMatcher
+from DistortionMatcher import DistortionMatcher
 from matplotlib import pyplot as plt
 
 import weights as wgts
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2):
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2, matcher='affinity'):
     all_diffs = []
     all_objectives = []
     all_affs = []
@@ -31,7 +33,15 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, verbose=Fal
         arbitraryConsts = np.random.choice(len(pairs), itrs * constr_per_itr, replace=False)
 
         # construct new problem instance and solve for initial solution
-        prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
+        if matcher.lower() == 'makespan':
+            print "MAKESPAN"
+            prob = FairMatcher(n_rev, n_pap, alpha, beta, weights)
+        elif matcher.lower() == 'distortion':
+            print "Selected distortion"
+            prob = DistortionMatcher(n_rev, n_pap, alpha, beta, weights)
+        else:
+            prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
+
         if verbose:
             prob.turn_on_verbosity()
         prob.solve()
@@ -95,6 +105,8 @@ if __name__ == "__main__":
     parser.add_argument('experiments', type=int, help='the number of experiment repetitions')
     parser.add_argument('itrs', type=int, help='the number of iterations to run')
     parser.add_argument('consts_per_itr', type=int, help='the number of constraints to add each iteration')
+    parser.add_argument('matcher', type=str, help='either affinity (default), makespan or two-phase')
+
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
     parser.add_argument('-b', '--beta', help='draw weights from a beta distribution (parameters ' + str(beta_param1) + ',' + str(beta_param2) + ')', action='store_true')
     parser.add_argument('-p', '--per_reviewer', help='draw weights per reviewer', action='store_true')
@@ -111,4 +123,4 @@ if __name__ == "__main__":
     w_samp = 'beta' if args.beta else None
     w_samp = 'per_rev' if args.per_reviewer else w_samp
 
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2)
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, n_exps, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2, args.matcher)
