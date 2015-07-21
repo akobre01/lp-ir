@@ -61,7 +61,7 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     if verbose:
         prob.turn_on_verbosity()
 
-    prob.solve()
+    prob.solve(log_file=log_file)
 
     n_diffs = []
     objectives = []
@@ -72,7 +72,7 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
             logging.info( "\tAdding constraint: " + str(i * constr_per_itr + j))
             (next_i, next_j) = pairs[arbitraryConsts[i * constr_per_itr + j]]
             prob.add_hard_const(next_i, next_j, log_file)
-        prob.solve()
+        prob.solve(log_file=log_file)
         objectives.append(prob.objective_val())
 
         # calculate the number of variables that changed between the current and previous sols

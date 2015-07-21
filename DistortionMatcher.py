@@ -1,5 +1,7 @@
-import uuid
+import logging
 import numpy as np
+import uuid
+
 from gurobipy import *
 
 class DistortionMatcher(object):
@@ -44,8 +46,9 @@ class DistortionMatcher(object):
             self.lp_vars.append([])
             for j in range(self.n_pap):
                 self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY, name=self.var_name(i,j)))
+        self.m.update()
 
-        # set the objective (this could be sped up if need be by incorporating it into the previous loop)
+        # set the objective
         obj = LinExpr()
         for i in range(self.n_rev):
             for j in range(self.n_pap):
@@ -89,7 +92,7 @@ class DistortionMatcher(object):
         self.makespan = new_makespan
         self.m.update()
 
-    def find_makespan_bin(self, mn=0, mx=-1, itr=10):
+    def find_makespan_bin(self, mn=0, mx=-1, itr=10, log_file=None):
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
@@ -99,14 +102,17 @@ class DistortionMatcher(object):
         prv = self.makespan
         target = (mn + mx) / 2.0
         self.change_makespan(target)
-        print "\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan)
+        if log_file:
+            logging.info("\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan))
         self.m.optimize()
 
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
-            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
+            if log_file:
+                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
             return self.find_makespan_bin(target, mx, itr -1)
         else:
-            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
+            if log_file:
+                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
             self.change_makespan(prv)
             return self.find_makespan_bin(mn, target, itr - 1)
 
@@ -119,10 +125,11 @@ class DistortionMatcher(object):
             _sol[v.varName] = v.x
         return _sol
 
-    def add_hard_const(self, i, j):
+    def add_hard_const(self, i, j, log_file=None):
         solution = self.sol_dict()
         prevVal = solution[self.var_name(i,j)]
-        print "\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1))
+        if log_file:
+            logging.info("\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1)))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
     def add_adeq_const(self, paper):
@@ -140,18 +147,20 @@ class DistortionMatcher(object):
                 count += 1
         return count
 
-    # if you've already solved the problem and have an initial solution, go to phase 2
-    def solve(self, mn=0, mx=-1, itr=10):
+    # if you've already solved the problem and have an initial solution,
+    # change to a minimization problem (minimize distortion)
+    def solve(self, mn=0, mx=-1, itr=10, log_file=None):
         if self.init_sol == False:
             self.init_sol = True
 
         else:
             self.reset_distortion_obj()
+            logging.info("OBJECTION RESET: minimize distortion")
 
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
 
-        self.find_makespan_bin(mn, mx, itr)
+        self.find_makespan_bin(mn, mx, itr, log_file)
         self.m.optimize()
 
         sol = {}
