@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import logging
 import math
 import numpy as np
 import os
@@ -18,7 +19,16 @@ def createDir(dir_name):
             raise # This was not a "directory exist" error..
 
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, outdir, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2, matcher='affinity'):
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2, matcher='affinity'):
+    # Logging and results
+    param_str = '_'.join(map(lambda x: str(x), [matcher, n_rev, n_pap, alpha, beta, itrs, w_samp, constr_per_itr, bp1, bp2]))
+    now = datetime.datetime.now()
+    exec_time = now.strftime("%Y%m%d_%H%M%S%f")
+    log_file = "./logs/" + exec_time + "_" + param_str + ".log"
+    outdir = './results/' + param_str
+
+    logging.basicConfig(filename=log_file, level=logging.DEBUG)
+
     all_diffs = []
     all_objectives = []
     all_affs = []
@@ -39,12 +49,13 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, outdir, verbose=Fal
 
     # construct new problem instance and solve for initial solution
     if matcher.lower() == 'makespan':
-        print "MAKESPAN"
+        logging.info("MATCHER: makespan")
         prob = FairMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'distortion':
-        print "Selected distortion"
+        logging.info("MATCHER: distortion")
         prob = DistortionMatcher(n_rev, n_pap, alpha, beta, weights)
     else:
+        logging.info("MATCHER: sum total affinity")
         prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
 
     if verbose:
@@ -58,9 +69,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, outdir, verbose=Fal
     # add in each of the new constraints (1 by 1 for now) and resolve the problem
     for i in range(0, itrs):
         for j in range(constr_per_itr):
-            print "\tAdding constraint: " + str(i * constr_per_itr + j)
+            logging.info( "\tAdding constraint: " + str(i * constr_per_itr + j))
             (next_i, next_j) = pairs[arbitraryConsts[i * constr_per_itr + j]]
-            prob.add_hard_const(next_i, next_j)
+            prob.add_hard_const(next_i, next_j, log_file)
         prob.solve()
         objectives.append(prob.objective_val())
 
@@ -77,11 +88,14 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, outdir, verbose=Fal
     createDir(outdir + "/objs")
     createDir(outdir + "/affs")
 
-    now = datetime.datetime.now()
-    exec_time = now.strftime("%Y%m%d_%H%M%S%f")
     np.savetxt(outdir + "/diffs/" + exec_time + "-diffs.csv", all_diffs, delimiter=',')
     np.savetxt(outdir + "/affs/" + exec_time + "-affs.csv", all_affs, delimiter=',')
     np.savetxt(outdir + "/objs/" + exec_time + "-objs.csv", all_objectives, delimiter=',')
+
+    print "**************************************************************"
+    print "RESULTS  WRITTEN TO: " + outdir
+    print "LOG FILE: " + log_file
+    print "**************************************************************"
 
 
 if __name__ == "__main__":
@@ -92,7 +106,6 @@ if __name__ == "__main__":
     parser.add_argument('reviewers', type=int, help='the number of reviewers')
     parser.add_argument('papers', type=int, help='the number of papers')
     parser.add_argument('reviews_per_paper', type=int, help='the number of reviews per paper')
-    parser.add_argument('outdir', type=str, help='the directory into which to write the results')
     parser.add_argument('itrs', type=int, help='the number of iterations to run')
     parser.add_argument('consts_per_itr', type=int, help='the number of constraints to add each iteration')
     parser.add_argument('matcher', type=str, help='either affinity (default), makespan or two-phase')
@@ -109,8 +122,7 @@ if __name__ == "__main__":
     beta = args.reviews_per_paper
     alpha = math.ceil((n_pap * beta) / float(n_rev))    # reviwer cannot review > alpha
     itrs = args.itrs
-    outdir = args.outdir
     w_samp = 'beta' if args.beta else None
     w_samp = 'per_rev' if args.per_reviewer else w_samp
 
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, outdir, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2, args.matcher)
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2, args.matcher)

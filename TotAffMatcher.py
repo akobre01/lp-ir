@@ -1,5 +1,7 @@
-import uuid
+import logging
 import numpy as np
+import uuid
+
 from gurobipy import *
 
 class TotAffMatcher(object):
@@ -60,10 +62,11 @@ class TotAffMatcher(object):
             _sol[v.varName] = v.x
         return _sol
 
-    def add_hard_const(self, i, j):
+    def add_hard_const(self, i, j, log_file=None):
         solution = self.sol_dict()
         prevVal = solution[self.var_name(i,j)]
-        print "\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1))
+        if log_file:
+            logging.info("\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1)))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
     def num_diffs(self, sol1, sol2):
