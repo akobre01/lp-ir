@@ -78,7 +78,7 @@ class MakespanMatcher(object):
         self.makespan = new_makespan
         self.m.update()
 
-    def find_makespan_bin(self, mn=0, mx=-1, itr=5, log_file=None):
+    def find_makespan_bin(self, mn=0, mx=-1, itr=10, log_file=None):
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
