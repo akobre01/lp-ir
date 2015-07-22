@@ -27,15 +27,14 @@ class RelaxedMSMatcher(object):
         self.beta = beta
         self.weights = weights
         self.id = uuid.uuid4()
-        self.m = Model(str(self.id) + ": iterative b-matching")
+        self.m = Model(str(self.id) + ": Relaxed Makespan")
         self.prev_sols = []
         self.prev_affs = []
         self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
-        self.constrs = {}
 
         self.m.setParam('OutputFlag', 0)
-        self.m.setParam('MIPGap', 0.02)
-        self.m.setParam('IterationLimit', 200000)
+#        self.m.setParam('MIPGap', 0.02)
+#        self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
         self.user_ms_constr_prefix = "ums"
@@ -45,7 +44,7 @@ class RelaxedMSMatcher(object):
         for i in range(self.n_rev):
             self.lp_vars.append([])
             for j in range(self.n_pap):
-                self.lp_vars[i].append(self.m.addVar(lb=0.0, ub=1.0, name=self.var_name(i,j)))
+                self.lp_vars[i].append(self.m.addVar(ub=1.0, name=self.var_name(i,j)))
 
         self.m.update()
 
@@ -58,15 +57,15 @@ class RelaxedMSMatcher(object):
 
         # reviewer constraints
         for r in range(self.n_rev):
-            self.constrs["r" + str(r)] = self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
+            self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
 
         # paper constraints
         for p in range(self.n_pap):
-            self.constrs["p" + str(p)] = self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) == self.beta, "p" + str(p))
+            self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) == self.beta, "p" + str(p))
 
         # (paper) makespan constraints
         for p in range(self.n_pap):
-            self.constrs[self.makespan_constr_name(p)] = self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
+            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
 
         self.m.update()
 
@@ -88,6 +87,7 @@ class RelaxedMSMatcher(object):
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
+            self.m.reset()
             self.m.optimize()
             return self
 
@@ -102,7 +102,7 @@ class RelaxedMSMatcher(object):
 
         self.m.optimize()
 
-        if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
+        if self.m.status == GRB.OPTIMAL:
             if log_file:
                 logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
             else:
@@ -165,14 +165,10 @@ class RelaxedMSMatcher(object):
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
 
-        print "finding makespan"
         self.find_makespan_bin(mn, mx, itr, log_file)
-        print "optimizing"
-        self.m.optimize()
-
-        if not self.integral_sol_found():
-            print "not integral"
-            self.round_fractional()
+        self.m.reset()
+        self.m.optimize()                # assume that the solutions to the relaxed LP is fractional
+        self.round_fractional()
 
         sol = {}
         for v in self.m.getVars():
@@ -188,7 +184,8 @@ class RelaxedMSMatcher(object):
             fractional_assignments = {}
             fractional_vars = {}
             sol = self.sol_dict()
-            fractional = 0
+            integral_assignments = np.ones((self.n_rev, self.n_pap)) * -1
+            fractional_vars = []
 
             for i in range(self.n_rev):
                 for j in range(self.n_pap):
@@ -196,31 +193,36 @@ class RelaxedMSMatcher(object):
                     if j not in fractional_assignments:
                         fractional_assignments[j] = []
 
-                    if sol[self.var_name(i,j)] == 0.0:
+                    if sol[self.var_name(i,j)] == 0.0 and integral_assignments[i][j] == -1:
                         self.m.addConstr(self.lp_vars[i][j] == 0.0, "h" + str(i) + ", " + str(j))
+                        integral_assignments[i][j] = 0.0
 
-                    elif  sol[self.var_name(i,j)] == 1.0:
+                    elif sol[self.var_name(i,j)] == 1.0 and integral_assignments[i][j] == -1:
                         self.m.addConstr(self.lp_vars[i][j] == 1.0, "h" + str(i) + ", " + str(j))
-                        paper_scores[j] += sol[self.var_name(i,j)] * self.weights[i][j]
+                        integral_assignments[i][j] = 1
 
-                    else:
+                    elif sol[self.var_name(i,j)] != 1.0 and sol[self.var_name(i,j)] != 0.0:
                         fractional_assignments[j].append((i,j))
-                        fractional += 1
+                        fractional_vars.append((i,j))
 
-            print "NUMBER FRACTIONAL: " + str(fractional)
-
+            constrs_to_remove = set()
             for (paper, frac_vars) in fractional_assignments.iteritems():
-#                print paper, frac_vars
                 if len(frac_vars) == 1:
                     i,j = frac_vars[0]
-                    print "PAPER " + str(j) + " has 1 fractional assignment: " + str(i)
-                    self.m.addConstr(self.m.addConstr(self.lp_vars[i][j] == 0, "h" + str(i) + ", " + str(j)))
-                    self.m.remove(self.constrs[self.makespan_constr_name(j)])
-                    self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= self.makespan - self.weights[i][j], self.ms_constr_prefix  + str(p))
+                    integral_assignments[i][j] = 0.0
+                    self.m.addConstr(self.lp_vars[i][j] == 0, "h" + str(i) + ", " + str(j))
+                    self.m.update()
+                    constrs_to_remove.add(self.makespan_constr_name(j))
+                    #self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= self.makespan - self.weights[i][j], self.ms_constr_prefix  + str(j))
 
+            for c in self.m.getConstrs():
+                if c.ConstrName in constrs_to_remove:
+                    self.m.remove(c)
             self.m.update()
+
+            self.m.reset()
             self.m.optimize()
-            print "ROUNDING FRACTIONAL"
+            print "RECURSING"
             return self.round_fractional()
 
     def status(self):
@@ -241,8 +243,8 @@ class RelaxedMSMatcher(object):
         return self.m.ObjVal
 
 if __name__ == "__main__":
-    n_rev = 100
-    n_pap = 100
+    n_rev = 10
+    n_pap = 10
     alpha = 1
     beta = 1
     bp1 = 0.5
@@ -253,5 +255,6 @@ if __name__ == "__main__":
     print "running"
     x = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
     x.solve()
+    x.round_fractional()
 
     print "[done.]"
