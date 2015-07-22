@@ -1,8 +1,10 @@
-import uuid
+import logging
 import numpy as np
+import uuid
+
 from gurobipy import *
 
-class FairMatcher(object):
+class MakespanMatcher(object):
     """An iterative paper matching problem instance that tries to maximize
     the minimum sum of affinities for any paper
 
@@ -24,7 +26,8 @@ class FairMatcher(object):
         self.id = uuid.uuid4()
         self.m = Model(str(self.id) + ": iterative b-matching")
         self.prev_sols = []
-        self.prev_affs = []
+        self.prev_rev_affs = []
+        self.prev_pap_affs = []
         self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
 
         self.m.setParam('OutputFlag', 0)
@@ -75,7 +78,7 @@ class FairMatcher(object):
         self.makespan = new_makespan
         self.m.update()
 
-    def find_makespan_bin(self, mn=0, mx=-1, itr=10):
+    def find_makespan_bin(self, mn=0, mx=-1, itr=5, log_file=None):
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
@@ -86,17 +89,20 @@ class FairMatcher(object):
         target = (mn + mx) / 2.0
         self.change_makespan(target)
 
-        print "\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan)
+        if log_file:
+            logging.info("\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan))
 
         self.m.optimize()
 
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
-            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
-            return self.find_makespan_bin(target, mx, itr -1)
+            if log_file:
+                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
+            return self.find_makespan_bin(target, mx, itr -1, log_file)
         else:
-            print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
+            if log_file:
+                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
             self.change_makespan(prv)
-            return self.find_makespan_bin(mn, target, itr - 1)
+            return self.find_makespan_bin(mn, target, itr - 1, log_file)
 
 
     def var_name(self,i,j):
@@ -108,10 +114,11 @@ class FairMatcher(object):
             _sol[v.varName] = v.x
         return _sol
 
-    def add_hard_const(self, i, j):
+    def add_hard_const(self, i, j, log_file=None):
         solution = self.sol_dict()
         prevVal = solution[self.var_name(i,j)]
-        print "\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1))
+        if log_file:
+            logging.info("\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1)))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
     def add_adeq_const(self, paper):
@@ -137,19 +144,21 @@ class FairMatcher(object):
             sol[v.varName] = v.x
         self.prev_sols.append(sol)
         self.save_reviewer_affinity()
+        self.save_paper_affinity()
 
     # find an appropriate makespan using binary search and solve
-    def solve(self, mn=0, mx=-1, itr=10):
+    def solve(self, mn=0, mx=-1, itr=10, log_file=None):
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
 
-        self.find_makespan_bin(mn, mx, itr)
+        self.find_makespan_bin(mn, mx, itr, log_file)
         self.m.optimize()
         sol = {}
         for v in self.m.getVars():
             sol[v.varName] = v.x
         self.prev_sols.append(sol)
         self.save_reviewer_affinity()
+        self.save_paper_affinity()
 
     def status(self):
         return self.m.status
@@ -163,7 +172,15 @@ class FairMatcher(object):
         for i in range(self.n_rev):
             for j in range(self.n_pap):
                 per_rev_aff[i] += sol[self.var_name(i,j)] * self.weights[i][j]
-        self.prev_affs.append(per_rev_aff)
+        self.prev_rev_affs.append(per_rev_aff)
+
+    def save_paper_affinity(self):
+        per_pap_aff = np.zeros((self.n_pap, 1))
+        sol = self.sol_dict()
+        for i in range(self.n_pap):
+            for j in range(self.n_rev):
+                per_pap_aff[i] += sol[self.var_name(j,i)] * self.weights[j][i]
+        self.prev_pap_affs.append(per_pap_aff)
 
     def objective_val(self):
         return self.m.ObjVal
@@ -177,7 +194,7 @@ if __name__ == "__main__":
     init_makespan = 0
 
     x = FairMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
-    x.find_makespan_bin(0, alpha, 10)
+    x.find_makespan_bin(0, alpha, 5)
     print x.makespan
     x.m.optimize()
     print x.status()

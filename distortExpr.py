@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 from TotAffMatcher import TotAffMatcher
-from FairMatcher import FairMatcher
+from MakespanMatcher import MakespanMatcher
 from DistortionMatcher import DistortionMatcher
 
 import weights as wgts
@@ -29,9 +29,15 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
 
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
 
+    print "**************************************************************"
+    print "RESULTS TO BE WRITTEN TO: " + str(outdir)
+    print "LOG FILE: " + log_file
+    print "**************************************************************"
+
     all_diffs = []
     all_objectives = []
-    all_affs = []
+    all_rev_affs = []
+    all_pap_affs = []
 
     # draw a new set of weights
     if w_samp == 'beta':
@@ -50,7 +56,7 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     # construct new problem instance and solve for initial solution
     if matcher.lower() == 'makespan':
         logging.info("MATCHER: makespan")
-        prob = FairMatcher(n_rev, n_pap, alpha, beta, weights)
+        prob = MakespanMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'distortion':
         logging.info("MATCHER: distortion")
         prob = DistortionMatcher(n_rev, n_pap, alpha, beta, weights)
@@ -81,20 +87,22 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     # bookkeeping
     all_diffs.append(n_diffs)
     all_objectives.append(objectives)
-    all_affs.append(prob.prev_affs[-1].reshape(-1))
+    all_rev_affs.append(prob.prev_rev_affs[-1].reshape(-1))
+    all_pap_affs.append(prob.prev_pap_affs[-1].reshape(-1))
 
     # save data to csv
     createDir(outdir + "/diffs")
     createDir(outdir + "/objs")
-    createDir(outdir + "/affs")
+    createDir(outdir + "/rev_affs")
+    createDir(outdir + "/pap_affs")
 
     np.savetxt(outdir + "/diffs/" + exec_time + "-diffs.csv", all_diffs, delimiter=',')
-    np.savetxt(outdir + "/affs/" + exec_time + "-affs.csv", all_affs, delimiter=',')
+    np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
+    np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
     np.savetxt(outdir + "/objs/" + exec_time + "-objs.csv", all_objectives, delimiter=',')
 
     print "**************************************************************"
     print "RESULTS  WRITTEN TO: " + outdir
-    print "LOG FILE: " + log_file
     print "**************************************************************"
 
 

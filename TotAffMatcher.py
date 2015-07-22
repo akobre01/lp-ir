@@ -26,7 +26,8 @@ class TotAffMatcher(object):
         self.id = uuid.uuid4()
         self.m = Model(str(self.id) + ": iterative b-matching")
         self.prev_sols = []
-        self.prev_affs = []
+        self.prev_rev_affs = []
+        self.prev_pap_affs = []
         self.m.setParam('OutputFlag',0)
 
         # primal variables
@@ -76,13 +77,14 @@ class TotAffMatcher(object):
                 count += 1
         return count
 
-    def solve(self):
+    def solve(self, log_file=None):
         self.m.optimize()
         sol = {}
         for v in self.m.getVars():
             sol[v.varName] = v.x
         self.prev_sols.append(sol)
         self.save_reviewer_affinity()
+        self.save_paper_affinity()
 
     def status(self):
         return m.status
@@ -96,7 +98,15 @@ class TotAffMatcher(object):
         for i in range(self.n_rev):
             for j in range(self.n_pap):
                 per_rev_aff[i] += sol[self.var_name(i,j)] * self.weights[i][j]
-        self.prev_affs.append(per_rev_aff)
+        self.prev_rev_affs.append(per_rev_aff)
+
+    def save_paper_affinity(self):
+        per_pap_aff = np.zeros((self.n_pap, 1))
+        sol = self.sol_dict()
+        for i in range(self.n_pap):
+            for j in range(self.n_rev):
+                per_pap_aff[i] += sol[self.var_name(j,i)] * self.weights[j][i]
+        self.prev_pap_affs.append(per_pap_aff)
 
     def objective_val(self):
         return self.m.ObjVal
