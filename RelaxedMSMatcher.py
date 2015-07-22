@@ -33,8 +33,6 @@ class RelaxedMSMatcher(object):
         self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
 
         self.m.setParam('OutputFlag', 0)
-#        self.m.setParam('MIPGap', 0.02)
-#        self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
         self.user_ms_constr_prefix = "ums"
@@ -56,8 +54,8 @@ class RelaxedMSMatcher(object):
         self.m.setObjective(obj, GRB.MAXIMIZE)
 
         # reviewer constraints
-        for r in range(self.n_rev):
-            self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
+#        for r in range(self.n_rev):
+#            self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
 
         # paper constraints
         for p in range(self.n_pap):
@@ -151,24 +149,13 @@ class RelaxedMSMatcher(object):
                 count += 1
         return count
 
-    # solve optimization with whatever the current makespan is
-    def solve_with_current_makespan(self):
-        self.m.optimize()
-        sol = {}
-        for v in self.m.getVars():
-            sol[v.varName] = v.x
-        self.prev_sols.append(sol)
-        self.save_reviewer_affinity()
-
     # find an appropriate makespan using binary search and solve
     def solve(self, mn=0, mx=-1, itr=10, log_file=None):
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
-        self.m.reset()
-        self.m.optimize()                # assume that the solutions to the relaxed LP is fractional
-        self.round_fractional()
+        self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1)
 
         sol = {}
         for v in self.m.getVars():
@@ -177,53 +164,72 @@ class RelaxedMSMatcher(object):
         self.prev_sols.append(sol)
         self.save_reviewer_affinity()
 
-    def round_fractional(self):
+    def round_fractional(self, integral_assignments):
+        self.m.update()
+        self.m.reset()
+        self.m.optimize()
+#        for c in self.m.getConstrs():
+#            print c.ConstrName
         if self.integral_sol_found():
             return
         else:
             fractional_assignments = {}
             fractional_vars = {}
             sol = self.sol_dict()
-            integral_assignments = np.ones((self.n_rev, self.n_pap)) * -1
             fractional_vars = []
 
+            # If you find that any integral assignments, add constraints to keep them
             for i in range(self.n_rev):
                 for j in range(self.n_pap):
 
                     if j not in fractional_assignments:
                         fractional_assignments[j] = []
 
-                    if sol[self.var_name(i,j)] == 0.0 and integral_assignments[i][j] == -1:
+                    if sol[self.var_name(i,j)] == 0.0 and integral_assignments[i][j] != 0.0:
                         self.m.addConstr(self.lp_vars[i][j] == 0.0, "h" + str(i) + ", " + str(j))
                         integral_assignments[i][j] = 0.0
 
-                    elif sol[self.var_name(i,j)] == 1.0 and integral_assignments[i][j] == -1:
+                    elif sol[self.var_name(i,j)] == 1.0 and integral_assignments[i][j] != 1.0:
                         self.m.addConstr(self.lp_vars[i][j] == 1.0, "h" + str(i) + ", " + str(j))
-                        integral_assignments[i][j] = 1
+                        integral_assignments[i][j] = 1.0
 
                     elif sol[self.var_name(i,j)] != 1.0 and sol[self.var_name(i,j)] != 0.0:
-                        fractional_assignments[j].append((i,j))
-                        fractional_vars.append((i,j))
+                        fractional_assignments[j].append((i,j, sol[self.var_name(i,j)]))
+                        fractional_vars.append((i,j,sol[self.var_name(i,j)]))
+                        integral_assignments[i][j] = sol[self.var_name(i,j)]
 
-            constrs_to_remove = set()
+            self.m.update()
+
+            print integral_assignments
+
+            # if you find any paper with 1 fractional assignment, round to zero, drop a makespan constraint and resolve
+            constrs_to_remove = {}
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 1:
-                    i,j = frac_vars[0]
+                    i,j,v = frac_vars[0]
+                    print integral_assignments
                     integral_assignments[i][j] = 0.0
                     self.m.addConstr(self.lp_vars[i][j] == 0, "h" + str(i) + ", " + str(j))
                     self.m.update()
-                    constrs_to_remove.add(self.makespan_constr_name(j))
-                    #self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= self.makespan - self.weights[i][j], self.ms_constr_prefix  + str(j))
 
-            for c in self.m.getConstrs():
-                if c.ConstrName in constrs_to_remove:
-                    self.m.remove(c)
-            self.m.update()
+                    for c in self.m.getConstrs():
+                        if c.ConstrName == self.makespan_constr_name(j):
+                            print c, c.ConstrName, i, j, c.RHS, self.weights[i][j], c.RHS - self.weights[i][j]
+                            print integral_assignments
+                            print
+                            self.m.remove(c)
+                            new_RHS = max(c.RHS - self.weights[i][j], 0.0)
+                            self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= new_RHS,
+                                             c.ConstrName)
+                            self.m.update()
+                            print "RECURSING"
+                            return self.round_fractional(integral_assignments)
 
-            self.m.reset()
-            self.m.optimize()
-            print "RECURSING"
-            return self.round_fractional()
+            # if there are two reviewers assigned fractionally to each paper, construct a perfect matching
+            if all(len(x) == 2 for (y,x) in fractional_assignments.iteritems()):
+                print "WARNING: SOLVING A PERFECT MATCHING UNIMPLEMENTED"
+
+            print "INFO: finished rounding"
 
     def status(self):
         return self.m.status
@@ -252,9 +258,9 @@ if __name__ == "__main__":
     weights = wgts.skillBased(n_rev, n_pap, bp1, bp2)
     init_makespan = 0
 
+    np.set_printoptions(precision=3)
     print "running"
     x = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
     x.solve()
-    x.round_fractional()
 
     print "[done.]"
