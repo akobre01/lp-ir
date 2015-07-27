@@ -34,4 +34,5 @@ if __name__ == "__main__":
     plt.xlabel(args.xlabel)
     plt.ylabel(args.ylabel)
     plt.title(args.title)
+    plt.xlim(0,5)
     plt.show()
