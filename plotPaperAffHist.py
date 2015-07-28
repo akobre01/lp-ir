@@ -26,11 +26,11 @@ if __name__ == "__main__":
         data = read_files_in_dir(d)
         affs.append(np.array(data))
 
-    mean_affs = np.mean(affs, 0)
+    mean_affs = np.mean(np.array(affs), 0)
 
     plt.figure(1)
     plt.subplot(111)
-    plt.hist(mean_affs, bins=args.bins)
+    plt.hist(mean_affs.reshape(-1), bins=args.bins)
     plt.xlabel(args.xlabel)
     plt.ylabel(args.ylabel)
     plt.title(args.title)
