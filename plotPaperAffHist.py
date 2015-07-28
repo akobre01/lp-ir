@@ -24,7 +24,7 @@ if __name__ == "__main__":
     affs = []
     for d in args.input_dirs:
         data = read_files_in_dir(d)
-        affs = np.array(data)
+        affs.append(np.array(data))
 
     mean_affs = np.mean(affs, 0)
 
