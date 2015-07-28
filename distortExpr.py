@@ -20,7 +20,7 @@ def createDir(dir_name):
             raise # This was not a "directory exist" error..
 
 
-def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2, matcher='affinity'):
+def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_samp=None, constr_per_itr=1, bp1=2, bp2=2, matcher='affinity', ws=None):
     # Logging and results
     param_str = '_'.join(map(lambda x: str(x), [matcher, n_rev, n_pap, alpha, beta, itrs, w_samp, constr_per_itr, bp1, bp2]))
     now = datetime.datetime.now()
@@ -41,7 +41,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     all_pap_affs = []
 
     # draw a new set of weights
-    if w_samp == 'beta':
+    if ws is not None:
+        weights = ws
+    elif w_samp == 'beta':
         weights = wgts.fromBeta(n_rev, n_pap, bp1, bp2)
     elif w_samp == 'per_rev':
         weights = wgts.skillBased(n_rev, n_pap, bp1, bp2)
@@ -95,11 +97,13 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     all_pap_affs.append(prob.prev_pap_affs[-1].reshape(-1))
 
     # save data to csv
+    createDir(outdir + "/weights")
     createDir(outdir + "/diffs")
     createDir(outdir + "/objs")
     createDir(outdir + "/rev_affs")
     createDir(outdir + "/pap_affs")
 
+    np.savetxt(outdir + "/weights/" + exec_time + "-weights.csv", weights, delimiter=',')
     np.savetxt(outdir + "/diffs/" + exec_time + "-diffs.csv", all_diffs, delimiter=',')
     np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
     np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
@@ -127,6 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
     parser.add_argument('-b', '--beta', help='draw weights from a beta distribution (parameters ' + str(beta_param1) + ',' + str(beta_param2) + ')', action='store_true')
     parser.add_argument('-p', '--per_reviewer', help='draw weights per reviewer', action='store_true')
+    parser.add_argument('-f','--weights_file', nargs='?', type=argparse.FileType('r'), help='file from which to load weights; required set flag')
 
     args = parser.parse_args()
 
@@ -138,5 +143,6 @@ if __name__ == "__main__":
     itrs = args.itrs
     w_samp = 'beta' if args.beta else None
     w_samp = 'per_rev' if args.per_reviewer else w_samp
+    ws = np.genfromtxt(args.weights_file, delimiter=',') if args.weights_file else None
 
-    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2, args.matcher)
+    runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, args.verbose, w_samp, args.consts_per_itr, beta_param1, beta_param2, args.matcher, ws)
