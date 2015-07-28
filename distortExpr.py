@@ -9,6 +9,7 @@ from TotAffMatcher import TotAffMatcher
 from MakespanMatcher import MakespanMatcher
 from DistortionMatcher import DistortionMatcher
 from RelaxedMSMatcher import RelaxedMSMatcher
+from RelaxRevPaPMatcher import RelaxRevPaPMatcher
 
 import weights as wgts
 
@@ -66,6 +67,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     elif matcher.lower() == 'relaxed':
         logging.info("MATCHER: relaxed makespan")
         prob = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights)
+    elif matcher.lower() == 'revpap':
+        logging.info("MATCHER: relax-reviewer and paper  makespan")
+        prob = RelaxRevPaPMatcher(n_rev, n_pap, alpha, beta, weights)
     else:
         logging.info("MATCHER: sum total affinity")
         prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
