@@ -105,7 +105,9 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
     np.savetxt(outdir + "/objs/" + exec_time + "-objs.csv", all_objectives, delimiter=',')
 
+
     print "**************************************************************"
+    print "OBJECTIVE: " + str(prob.objective_val())
     print "RESULTS  WRITTEN TO: " + outdir
     print "**************************************************************"
 
