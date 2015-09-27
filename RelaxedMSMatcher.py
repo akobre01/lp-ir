@@ -141,7 +141,9 @@ class RelaxedMSMatcher(object):
     def add_round_const(self, i, j, val, log_file=None):
         if log_file:
             logging.info("\tROUNDING (REVIEWER, PAPER) " + str((i,j)) + " TO VAL: " + str(val))
-        self.m.addConstr(self.lp_vars[i][j] == val, self.round_constr_prefix + str(i) + ", " + str(j))
+        self.lp_vars[i][j].ub = val
+        self.lp_vars[i][j].lb = val
+        #self.m.addConstr(self.lp_vars[i][j] == val, self.round_constr_prefix + str(i) + ", " + str(j))
 
     def add_adeq_const(self, paper):
         solution = self.sol_dict()
@@ -163,7 +165,7 @@ class RelaxedMSMatcher(object):
         for c in self.m.getConstrs():
             if c.ConstrName.startswith(self.round_constr_prefix):
                 self.m.remove(c)
-                self.m.update()
+#                self.m.update()
 
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
@@ -172,8 +174,9 @@ class RelaxedMSMatcher(object):
         self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1, log_file)
 
         sol = {}
-        for v in self.m.getVars():
-            sol[v.varName] = v.x
+#        for v in self.m.getVars():
+#            print v.varName
+#            sol[v.varName] = v.x
 
         self.prev_sols.append(sol)
         self.save_reviewer_affinity()
@@ -182,9 +185,9 @@ class RelaxedMSMatcher(object):
             logging.info("OBJECTIVE VALUE: " + str(self.objective_val()))
 
     def round_fractional(self, integral_assignments, log_file=None):
-        self.m.update()
         self.m.reset()
         self.m.optimize()
+        print self.m.status
 #        for c in self.m.getConstrs():
 #            print c.ConstrName
         if self.integral_sol_found():
@@ -218,7 +221,7 @@ class RelaxedMSMatcher(object):
                         fractional_vars.append((i,j,sol[self.var_name(i,j)]))
                         integral_assignments[i][j] = sol[self.var_name(i,j)]
 
-            self.m.update()
+#            self.m.update()
 
 #            print integral_assignments
 
@@ -230,7 +233,7 @@ class RelaxedMSMatcher(object):
 #                    print integral_assignments
                     integral_assignments[i][j] = 0.0
                     self.add_round_constr(i, j, 0.0, log_file)
-                    self.m.update()
+#                    self.m.update()
 
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(j):
@@ -238,20 +241,20 @@ class RelaxedMSMatcher(object):
 #                            print integral_assignments
 #                            print
                             self.m.remove(c)
-                            new_RHS = max(c.RHS - self.weights[i][j], 0.0)
+#                            new_RHS = max(c.RHS - self.weights[i][j], 0.0)
 #                            self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= new_RHS,
 #                                             c.ConstrName)
-                            self.m.update()
-#                            print "RECURSING"
+#                            self.m.update()
+                            print "RECURSING"
                             return self.round_fractional(integral_assignments, log_file)
 
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 2:
-                    i1,j,v1 = frac_vars[0]
-                    i2,_,v2 = frac_vars[0]
+#                    i1,j,v1 = frac_vars[0]
+#                    i2,_,v2 = frac_vars[0]
 #                    print integral_assignments
 #                    integral_assignments[i][j] = 0.0
-                    self.m.update()
+#                    self.m.update()
 
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(j):
@@ -262,19 +265,19 @@ class RelaxedMSMatcher(object):
 #                            new_RHS = max(c.RHS - self.weights[i][j], 0.0)
 #                            self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= new_RHS,
 #                                             c.ConstrName)
-                            self.m.update()
-#                            print "RECURSING"
+#                            self.m.update()
+                            print "RECURSING"
                             return self.round_fractional(integral_assignments, log_file)
 
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 3:
-                    i1,j,v1 = frac_vars[0]
-                    i2,_,v2 = frac_vars[1]
-                    i3,_,v3 = frac_vars[2]
+#                    i1,j,v1 = frac_vars[0]
+#                    i2,_,v2 = frac_vars[1]
+#                    i3,_,v3 = frac_vars[2]
 #                    print integral_assignments
 #                    integral_assignments[i][j] = 0.0
 #                    self.add_round_constr(i,j,log_file)
-                    self.m.update()
+#                    self.m.update()
 
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(j):
@@ -285,8 +288,8 @@ class RelaxedMSMatcher(object):
 #                            new_RHS = max(c.RHS - self.weights[i][j], 0.0)
 #                            self.m.addConstr(sum([ self.lp_vars[i][j] * self.weights[i][j] for i in range(self.n_rev) ]) >= new_RHS,
 #                                             c.ConstrName)
-                            self.m.update()
-#                            print "RECURSING"
+#                            self.m.update()
+                            print "RECURSING"
                             return self.round_fractional(integral_assignments, log_file)
 
             # if there are two reviewers assigned fractionally to each paper, construct a perfect matching
