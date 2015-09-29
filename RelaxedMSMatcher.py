@@ -63,7 +63,7 @@ class RelaxedMSMatcher(object):
 
         # paper constraints
         for p in range(self.n_pap):
-            self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) >= self.beta, "p" + str(p))
+            self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) == self.beta, "p" + str(p))
 
         # (paper) makespan constraints
         for p in range(self.n_pap):
@@ -182,7 +182,6 @@ class RelaxedMSMatcher(object):
             logging.info("OBJECTIVE VALUE: " + str(self.objective_val()))
 
     def round_fractional(self, integral_assignments, log_file=None):
-#        self.m.reset()
         self.m.optimize()
         print self.m.status
 
@@ -191,6 +190,7 @@ class RelaxedMSMatcher(object):
             return
         else:
             fractional_assignments = {}
+            r_fractional = {}
             fractional_vars = {}
             sol = self.sol_dict()
             fractional_vars = []
@@ -201,6 +201,8 @@ class RelaxedMSMatcher(object):
 
                     if j not in fractional_assignments:
                         fractional_assignments[j] = []
+                    if i not in r_fractional:
+                        r_fractional[i] = []
 
                     if sol[self.var_name(i,j)] == 0.0 and integral_assignments[i][j] != 0.0:
                         self.add_round_const(i, j, 0.0, log_file)
@@ -213,43 +215,51 @@ class RelaxedMSMatcher(object):
                     elif sol[self.var_name(i,j)] != 1.0 and sol[self.var_name(i,j)] != 0.0:
                         fractional_assignments[j].append((i,j, sol[self.var_name(i,j)]))
                         fractional_vars.append((i,j,sol[self.var_name(i,j)]))
+
+                        r_fractional[i].append((i,j,sol[self.var_name(i,j)]))
                         integral_assignments[i][j] = sol[self.var_name(i,j)]
 
-            print "NUMBER OF PAPERS WITH FRACTIONAL ASSIGNMENTS: " + str(len(fractional_assignments))
+            print "NUMBER OF PAPERS WITH NO FRACTIONAL ASSIGNMENTS: " + str(len(filter(lambda x: len(x) == 0, fractional_assignments.values())))
+            print "NUMBER OF PAPERS WITH 1 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 1, fractional_assignments.values())))
+            print "NUMBER OF PAPERS WITH 2 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 2, fractional_assignments.values())))
+            print "NUMBER OF PAPERS WITH 3 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 3, fractional_assignments.values())))
+            print "NUMBER OF PAPERS WITH 4+ FRACTIONAL: " + str(len(filter(lambda x: len(x) >= 4, fractional_assignments.values())))
+
+            print "NUMBER OF REVIEWERS WITH NO FRACTIONAL ASSIGNMENTS: " + str(len(filter(lambda x: len(x) == 0, r_fractional.values())))
+            print "NUMBER OF REVIEWERS WITH 1 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 1, r_fractional.values())))
+            print "NUMBER OF REVIEWERS WITH 2 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 2, r_fractional.values())))
+            print "NUMBER OF REVIEWRES WITH 3 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 3, r_fractional.values())))
+            print "NUMBER OF REVIEWERS WITH 4+ FRACTIONAL: " + str(len(filter(lambda x: len(x) >= 4, r_fractional.values())))
+
+
             # if you find any paper with 1 fractional assignment, round to zero, drop a makespan constraint and resolve
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 1:
-                    print "found an instance of 1 var"
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(paper):
-                            print "doing what I'm supposed to"
                             self.m.remove(c)
-                            print "RECURSING"
                             return self.round_fractional(integral_assignments, log_file)
 
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 2:
-                    print "found an instance of 2 vars"
                     for c in self.m.getConstrs():
-                        print c.ConstrName
-                        print self.makespan_constr_name(paper)
-                        print c
                         if c.ConstrName == self.makespan_constr_name(paper):
-                            print "doing what I'm supposed to"
                             self.m.remove(c)
-                            print "RECURSING"
                             return self.round_fractional(integral_assignments, log_file)
 
-            for (paper, frac_vars) in fractional_assignments.iteritems():
-                if len(frac_vars) == 3:
-                    print "found an instance of 3 vars"
-                    for c in self.m.getConstrs():
+#            for (reviewer, frac_vars) in r_fractional.iteritems():
+#                if len(frac_vars) == 2:
+#                    for c in self.m.getConstrs():
+#                        if c.ConstrName == "r" + str(paper):
+#                            self.m.remove(c)
+#                            return self.round_fractional(integral_assignments, log_file)
 
-                        if c.ConstrName == self.makespan_constr_name(paper):
-                            print "doing what I'm supposed to"
-                            self.m.remove(c)
-                            print "RECURSING"
-                            return self.round_fractional(integral_assignments, log_file)
+#            for (paper, frac_vars) in fractional_assignments.iteritems():
+#                if len(frac_vars) == 3:
+#                    for c in self.m.getConstrs():
+#                        if c.ConstrName == self.makespan_constr_name(paper):
+#                            self.m.remove(c)
+#                            return self.round_fractional(integral_assignments, log_file)
 
     def status(self):
         return self.m.status
