@@ -74,7 +74,7 @@ class RelaxedMSMatcher(object):
     def makespan_constr_name(self, p):
         return self.ms_constr_prefix + str(p)
 
-    def change_makespan(self, new_makespan):
+    def change_makespan(self, new_makespan, log_file=None):
         for c in self.m.getConstrs():
             if c.getAttr("ConstrName").startswith(self.ms_constr_prefix):
                 self.m.remove(c)
@@ -83,6 +83,7 @@ class RelaxedMSMatcher(object):
         for p in range(self.n_pap):
             self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= new_makespan, self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
+
         self.m.update()
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10, log_file=None):
@@ -98,21 +99,23 @@ class RelaxedMSMatcher(object):
         self.change_makespan(target)
 
         if log_file:
-            logging.info("\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan))
+            logging.info("[MAKESPAN ATTEMPT]: %f" % self.makespan)
         else:
-            print "\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan)
+            print "[MAKESPAN ATTEMPT]: %f" % self.makespan
 
         self.m.optimize()
 
         if self.m.status == GRB.OPTIMAL:
             if log_file:
-                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
+                logging.info("[STATUS]: %d" % self.m.status)
+                logging.info("SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
             else:
                 print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
             return self.find_makespan_bin(target, mx, itr -1, log_file)
         else:
             if log_file:
-                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
+                logging.info("[STATUS]: %d" % self.m.status)
+                logging.info("SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
             else:
                 print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
             self.change_makespan(prv)
@@ -179,16 +182,19 @@ class RelaxedMSMatcher(object):
         self.save_reviewer_affinity()
         self.save_paper_affinity()
         if log_file:
-            logging.info("OBJECTIVE VALUE: " + str(self.objective_val()))
+            logging.info("[OBJ]: %f" % self.objective_val())
 
-    def round_fractional(self, integral_assignments, log_file=None):
+    def round_fractional(self, integral_assignments, log_file=None, count = 0):
         self.m.optimize()
-        print self.m.status
 
         if self.integral_sol_found():
             print "FOUND INTEGRAL SOLUTION"
+            if log_file:
+                logging.info('[#ITERATIONS]: %d' % count)
             return
         else:
+            if log_file:
+                logging.info('[BEGIN ROUNDING ITERATION]: %d' % count)
             fractional_assignments = {}
             r_fractional = {}
             fractional_vars = {}
@@ -219,36 +225,43 @@ class RelaxedMSMatcher(object):
                         r_fractional[i].append((i,j,sol[self.var_name(i,j)]))
                         integral_assignments[i][j] = sol[self.var_name(i,j)]
 
-            print "NUMBER OF PAPERS WITH NO FRACTIONAL ASSIGNMENTS: " + str(len(filter(lambda x: len(x) == 0, fractional_assignments.values())))
-            print "NUMBER OF PAPERS WITH 1 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 1, fractional_assignments.values())))
-            print "NUMBER OF PAPERS WITH 2 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 2, fractional_assignments.values())))
-            print "NUMBER OF PAPERS WITH 3 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 3, fractional_assignments.values())))
-            print "NUMBER OF PAPERS WITH 4+ FRACTIONAL: " + str(len(filter(lambda x: len(x) >= 4, fractional_assignments.values())))
+            # Let's log some features for learning which variables to round
+            if log_file:
+                logging.info('[FEAT_#PAPS_0_FRAC]: %d' % len(filter(lambda x: len(x) == 0, fractional_assignments.values())))
+                logging.info('[FEAT_#PAPS_1_FRAC]: %d' % len(filter(lambda x: len(x) == 1, fractional_assignments.values())))
+                logging.info('[FEAT_#PAPS_2_FRAC]: %d' % len(filter(lambda x: len(x) == 2, fractional_assignments.values())))
+                logging.info('[FEAT_#PAPS_3_FRAC]: %d' % len(filter(lambda x: len(x) == 3, fractional_assignments.values())))
+                logging.info('[FEAT_#PAPS_4+_FRAC]: %d' % len(filter(lambda x: len(x) >= 4, fractional_assignments.values())))
 
-            print "NUMBER OF REVIEWERS WITH NO FRACTIONAL ASSIGNMENTS: " + str(len(filter(lambda x: len(x) == 0, r_fractional.values())))
-            print "NUMBER OF REVIEWERS WITH 1 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 1, r_fractional.values())))
-            print "NUMBER OF REVIEWERS WITH 2 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 2, r_fractional.values())))
-            print "NUMBER OF REVIEWRES WITH 3 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 3, r_fractional.values())))
-            print "NUMBER OF REVIEWERS WITH 4+ FRACTIONAL: " + str(len(filter(lambda x: len(x) >= 4, r_fractional.values())))
+                logging.info('[FEAT_#REVS_0_FRAC]: %d' % len(filter(lambda x: len(x) == 0, r_fractional.values())))
+                logging.info('[FEAT_#REVS_1_FRAC]: %d' % len(filter(lambda x: len(x) == 1, r_fractional.values())))
+                logging.info('[FEAT_#REVS_2_FRAC]: %d' % len(filter(lambda x: len(x) == 2, r_fractional.values())))
+                logging.info('[FEAT_#REVS_3_FRAC]: %d' % len(filter(lambda x: len(x) == 3, r_fractional.values())))
+                logging.info('[FEAT_#REVS_4+_FRAC]: %d' % len(filter(lambda x: len(x) >= 4, r_fractional.values())))
 
-            print "FOUND %d TIGHT REVIEWER CONSTRAINTS" % self.count_tight_rev_constr(sol)
-            print "FOUND %d REVIEWERS WITH ZERO ASSIGNMENTS" % self.count_revs_with_zero_assigned(sol)
-            print "NUMBER OF FRACTIONAL VARIABLES: %d" % sum([ len(frac_vars) for frac_vars in fractional_assignments.values()])
+                logging.info('[FEAT_#TIGHT_REV_CONSTR]: %d' % self.count_tight_rev_constr(sol))
+                logging.info('[FEAT_#REV_0_ASSN]: %d' % self.count_revs_with_zero_assigned(sol))
+                logging.info('[FEAT_#FRAC_VAR]: %d' % sum([ len(frac_vars) for frac_vars in fractional_assignments.values()]))
+
 
             # I'm pretty sure this first case never happens if you have an equality constraint on the number of reviewers per paper
-            for (paper, frac_vars) in fractional_assignments.iteritems():
-                if len(frac_vars) == 1:
-                    for c in self.m.getConstrs():
-                        if c.ConstrName == self.makespan_constr_name(paper):
-                            self.m.remove(c)
-                            return self.round_fractional(integral_assignments, log_file)
+            # for (paper, frac_vars) in fractional_assignments.iteritems():
+            #     if len(frac_vars) == 1:
+            #         for c in self.m.getConstrs():
+            #             if c.ConstrName == self.makespan_constr_name(paper):
+            #                 self.m.remove(c)
+            #                 return self.round_fractional(integral_assignments, log_file)
 
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 2:
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(paper):
+                            if log_file:
+                                logging.info('[REMOVED CONSTR NAME]: %s' % str(c.ConstrName))
+                                logging.info('[REMOVED CONSTR PAPER]: %d' % paper)
+                                logging.info('[REMOVED ON ITERATION]: %d' % count)
                             self.m.remove(c)
-                            return self.round_fractional(integral_assignments, log_file)
+                            return self.round_fractional(integral_assignments, log_file, count+1)
 
 #            for (reviewer, frac_vars) in r_fractional.iteritems():
 #                if len(frac_vars) == 2:

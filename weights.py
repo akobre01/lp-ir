@@ -56,8 +56,8 @@ if __name__ == "__main__":
                 raise # This was not a "directory exist" error..
 
     outdir = './weights/'
-    outfile = outdir + "-".join(map(lambda x: str(x), [args.name, args.nrev, args.npap, args.bp1, args.bp2, "skill_based"]))
+    outfile = outdir + "-".join(map(lambda x: str(x), [args.name, args.nrev, args.npap, args.bp1, args.bp2, "skill_based"])) + ".out"
 
     createDir(outdir)
     weights = skillBased(args.nrev, args.npap, args.bp1, args.bp2)
-    np.savetxt(outfile, weights, delimiter=',')
+    np.savetxt(outfile, weights)
