@@ -3,6 +3,7 @@ import datetime
 import logging
 import math
 import numpy as np
+import time
 import os
 
 from TotAffMatcher import TotAffMatcher
@@ -59,19 +60,19 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
 
     # construct new problem instance and solve for initial solution
     if matcher.lower() == 'makespan':
-        logging.info("MATCHER: makespan")
+        logging.info("[MATCHER]: makespan")
         prob = MakespanMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'distortion':
-        logging.info("MATCHER: distortion")
+        logging.info("[MATCHER]: distortion")
         prob = DistortionMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'relaxed':
-        logging.info("MATCHER: relaxed makespan")
+        logging.info("[MATCHER]: relaxed makespan")
         prob = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'revpap':
-        logging.info("MATCHER: relax-reviewer and paper  makespan")
+        logging.info("[MATCHER]: relax-reviewer and paper  makespan")
         prob = RelaxRevPaPMatcher(n_rev, n_pap, alpha, beta, weights)
     else:
-        logging.info("MATCHER: sum total affinity")
+        logging.info("[MATCHER]: sum total affinity")
         prob = TotAffMatcher(n_rev, n_pap, alpha, beta, weights)
 
     if verbose:
@@ -88,7 +89,10 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
             logging.info( "[ADDING CONSTRAINT]: %s" %  str(i * constr_per_itr + j))
             (next_i, next_j) = pairs[arbitraryConsts[i * constr_per_itr + j]]
             prob.add_hard_const(next_i, next_j, log_file)
+        start = time.time()
         prob.solve(log_file=log_file)
+        t = time.time() - start
+        logging.info("[TOTAL TIME]: %f" % t)
         objectives.append(prob.objective_val())
 
         # calculate the number of variables that changed between the current and previous sols
