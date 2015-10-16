@@ -231,8 +231,11 @@ class RelaxedMSMatcher(object):
             print "NUMBER OF REVIEWRES WITH 3 FRACTIONAL: " + str(len(filter(lambda x: len(x) == 3, r_fractional.values())))
             print "NUMBER OF REVIEWERS WITH 4+ FRACTIONAL: " + str(len(filter(lambda x: len(x) >= 4, r_fractional.values())))
 
+            print "FOUND %d TIGHT REVIEWER CONSTRAINTS" % self.count_tight_rev_constr(sol)
+            print "FOUND %d REVIEWERS WITH ZERO ASSIGNMENTS" % self.count_revs_with_zero_assigned(sol)
+            print "NUMBER OF FRACTIONAL VARIABLES: %d" % sum([ len(frac_vars) for frac_vars in fractional_assignments.values()])
 
-            # if you find any paper with 1 fractional assignment, round to zero, drop a makespan constraint and resolve
+            # I'm pretty sure this first case never happens if you have an equality constraint on the number of reviewers per paper
             for (paper, frac_vars) in fractional_assignments.iteritems():
                 if len(frac_vars) == 1:
                     for c in self.m.getConstrs():
@@ -260,6 +263,27 @@ class RelaxedMSMatcher(object):
 #                        if c.ConstrName == self.makespan_constr_name(paper):
 #                            self.m.remove(c)
 #                            return self.round_fractional(integral_assignments, log_file)
+
+
+    def count_tight_rev_constr(self, sol):
+        tight = 0
+        for i in range(self.n_rev):
+            assignment_count = 0
+            for j in range(self.n_pap):
+                assignment_count += sol[self.var_name(i,j)]
+            if assignment_count == self.alpha:
+                tight += 1
+        return tight
+
+    def count_revs_with_zero_assigned(self, sol):
+        zero = 0
+        for i in range(self.n_rev):
+            assignment_count = 0
+            for j in range(self.n_pap):
+                assignment_count += sol[self.var_name(i,j)]
+            if assignment_count == 0:
+                zero += 1
+        return zero
 
     def status(self):
         return self.m.status
