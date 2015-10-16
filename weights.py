@@ -1,3 +1,6 @@
+import argparse
+import os
+
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -34,3 +37,27 @@ def showWeights(weights):
     plt.xlabel("Papers")
     plt.ylabel("Reviewers")
     plt.show()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Arguments for creating weight files.')
+    parser.add_argument('name', type=str, help='The name of the file')
+    parser.add_argument('nrev', type=int, help='# of reviewers')
+    parser.add_argument('npap', type=int, help='# of papers')
+    parser.add_argument('bp1', type=float, help='alpha parameter for the beta distribution')
+    parser.add_argument('bp2', type=float, help='beta parameter for the beta distribution')
+
+    args = parser.parse_args()
+
+    def createDir(dir_name):
+        try:
+            os.makedirs(dir_name)
+        except OSError, e:
+            if e.errno != 17:
+                raise # This was not a "directory exist" error..
+
+    outdir = './weights/'
+    outfile = outdir + "-".join(map(lambda x: str(x), [args.name, args.nrev, args.npap, args.bp1, args.bp2, "skill_based"]))
+
+    createDir(outdir)
+    weights = skillBased(args.nrev, args.npap, args.bp1, args.bp2)
+    np.savetxt(outfile, weights, delimiter=',')

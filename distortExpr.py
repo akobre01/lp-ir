@@ -85,7 +85,7 @@ def runDistortionExperiment(n_rev, n_pap, alpha, beta, itrs, verbose=False, w_sa
     # add in each of the new constraints (1 by 1 for now) and resolve the problem
     for i in range(0, itrs):
         for j in range(constr_per_itr):
-            logging.info( "\tAdding constraint: " + str(i * constr_per_itr + j))
+            logging.info( "[ADDING CONSTRAINT]: %s" %  str(i * constr_per_itr + j))
             (next_i, next_j) = pairs[arbitraryConsts[i * constr_per_itr + j]]
             prob.add_hard_const(next_i, next_j, log_file)
         prob.solve(log_file=log_file)
