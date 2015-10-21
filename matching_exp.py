@@ -23,12 +23,13 @@ def createDir(dir_name):
             raise # This was not a "directory exist" error..
 
 
-def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws=None, weights_file=None):
+def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws=None, weights_file=None, log_file_dir=None):
     # Logging and results
     param_str = '_'.join(map(lambda x: str(x), [matcher, n_rev, n_pap, alpha, beta]))
     now = datetime.datetime.now()
     exec_time = now.strftime("%Y%m%d_%H%M%S%f")
-    log_file = "./logs/" + exec_time + "_matching_exp_" + param_str + ".log"
+    logging_base = './logs/' if log_file_dir == None else log_file_dir
+    log_file = logging_base + exec_time + "_matching_exp_" + param_str + ".log" 
     outdir = './results/matching_exp/' + param_str
 
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
@@ -97,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument('max_reviews_per_reviewer', type=int, help='the max number of reviews per reviewer')
     parser.add_argument('matcher', type=str, help='either affinity (default), makespan or two-phase')
     parser.add_argument('-f','--weights_file', type=str, help='file from which to load weights; required set flag')
+    parser.add_argument('-l','--log_file_dir', type=str, help='the base directory into which to write the log of this run')
 
     parser.add_argument('-v', '--verbose', help='print gurobi output', action='store_true')
 
@@ -107,5 +109,6 @@ if __name__ == "__main__":
     beta = args.reviews_per_paper
     alpha = args.max_reviews_per_reviewer
     ws = np.genfromtxt(args.weights_file)
+    log_file = args.log_file_dir
 
-    runMatching(n_rev, n_pap, alpha, beta, args.verbose, args.matcher, ws, args.weights_file)
+    runMatching(n_rev, n_pap, alpha, beta, args.verbose, args.matcher, ws, args.weights_file, log_file_dir)
