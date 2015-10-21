@@ -11,6 +11,7 @@ from MakespanMatcher import MakespanMatcher
 from DistortionMatcher import DistortionMatcher
 from RelaxedMSMatcher import RelaxedMSMatcher
 from RelaxRevPaPMatcher import RelaxRevPaPMatcher
+from CompleteRelaxationMSMatcher import CompleteRelaxationMSMatcher
 
 import weights as wgts
 
