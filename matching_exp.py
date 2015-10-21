@@ -55,6 +55,9 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     elif matcher.lower() == 'relaxed':
         logging.info("[MATCHER]: relaxed makespan")
         prob = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights)
+    elif matcher.lower() == 'complete-relax':
+        logging.info("[MATCHER]: completely relaxed makespan")
+        prob = CompleteRelaxationMSMatcher(n_rev, n_pap, alpha, beta, weights)
     elif matcher.lower() == 'revpap':
         logging.info("[MATCHER]: relax-reviewer and paper  makespan")
         prob = RelaxRevPaPMatcher(n_rev, n_pap, alpha, beta, weights)
@@ -109,6 +112,6 @@ if __name__ == "__main__":
     beta = args.reviews_per_paper
     alpha = args.max_reviews_per_reviewer
     ws = np.genfromtxt(args.weights_file)
-    log_file = args.log_file_dir
+    log_file_dir = args.log_file_dir
 
     runMatching(n_rev, n_pap, alpha, beta, args.verbose, args.matcher, ws, args.weights_file, log_file_dir)
