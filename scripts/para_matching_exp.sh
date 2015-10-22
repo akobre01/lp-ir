@@ -37,6 +37,12 @@ EXPERIMENTS+=("500 900 3 6 'complete-relax' -f ./weights/exp3-500-900-0.5-2.0-sk
 EXPERIMENTS+=("500 900 3 6 'complete-relax' -f ./weights/exp4-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
 EXPERIMENTS+=("500 900 3 6 'complete-relax' -f ./weights/exp5-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
 
+EXPERIMENTS+=("500 900 3 6 'makespan' -f ./weights/exp1-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
+EXPERIMENTS+=("500 900 3 6 'makespan' -f ./weights/exp2-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
+EXPERIMENTS+=("500 900 3 6 'makespan' -f ./weights/exp3-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
+EXPERIMENTS+=("500 900 3 6 'makespan' -f ./weights/exp4-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
+EXPERIMENTS+=("500 900 3 6 'makespan' -f ./weights/exp5-500-900-0.5-2.0-skill_based.out -l ${OUTDIR}/")
+
 EXP_NAMES+=("exp1-relaxed-500-900")
 EXP_NAMES+=("exp2-relaxed-500-900")
 EXP_NAMES+=("exp3-relaxed-500-900")
@@ -54,6 +60,12 @@ EXP_NAMES+=("exp2-complete_relax-500-900")
 EXP_NAMES+=("exp3-complete_relax-500-900")
 EXP_NAMES+=("exp4-complete_relax-500-900")
 EXP_NAMES+=("exp5-complete_relax-500-900")
+
+EXP_NAMES+=("exp1-makespan-500-900")
+EXP_NAMES+=("exp2-makespan-500-900")
+EXP_NAMES+=("exp3-makespan-500-900")
+EXP_NAMES+=("exp4-makespan-500-900")
+EXP_NAMES+=("exp5-makespan-500-900")
 
 for ((i = 0; i < ${#EXPERIMENTS[@]}; i++))
 do
