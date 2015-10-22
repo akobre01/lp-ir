@@ -73,6 +73,16 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     t = time.time() - start
     logging.info("[TOTAL TIME]: %f" % t)
 
+    # construct the matrix of assignments
+    solution = prob.prev_sols[-1]
+    assn_mat = np.array([ np.array([ solution[prob.var_name(i,j)] for j in range(n_pap) ]) for i in range(n_rev) ])
+
+    # makespan
+    if matcher.lower() in set(['relaxed','complete-relax','makespan']):
+        makespan = np.array([prob.makespan])
+    else:
+        makespan = np.array([0.0])
+
     # bookkeeping
     all_rev_affs.append(prob.prev_rev_affs[-1].reshape(-1))
     all_pap_affs.append(prob.prev_pap_affs[-1].reshape(-1))
@@ -82,14 +92,25 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     createDir(outdir + "/weights")
     createDir(outdir + "/rev_affs")
     createDir(outdir + "/pap_affs")
+    createDir(outdir + "/assignments")
+    createDir(outdir + "/makespan")
 
     np.savetxt(outdir + "/weights/" + exec_time + "-weights.csv", weights, delimiter=',')
     np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
     np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
+    np.savetxt(outdir + "/assignments/" + exec_time + "-assignments.csv", assn_mat, delimiter=',')
+    np.savetxt(outdir + "/makespan/" + exec_time + "-makespan.csv", makespan, delimiter=',')
+
+    assignment_file = outdir + "/assignments/" + exec_time + "-assignments.csv"
+    makespan_file = outdir + "/makespan/" + exec_time + "-makespan.csv"
 
     print "**************************************************************"
-    print "OBJECTIVE: " + str(prob.objective_val())
-    print "RESULTS  WRITTEN TO: " + outdir
+    print "OBJECTIVE: %s" % str(prob.objective_val())
+    print "WEIGHTS used: %s" % args.weights_file
+    print "ASSIGNMENTS written to: %s" % assignment_file
+    print "MAKESPAN written to: %s" % makespan_file
+    print "to produce stats of the result run:"
+    print "python analyzeMatching.py %s %s -m %s" % (args.weights_file, assignment_file, makespan_file)
     print "**************************************************************"
 
 
