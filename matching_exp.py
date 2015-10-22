@@ -29,7 +29,7 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     now = datetime.datetime.now()
     exec_time = now.strftime("%Y%m%d_%H%M%S%f")
     logging_base = './logs/' if log_file_dir == None else log_file_dir
-    log_file = logging_base + exec_time + "_matching_exp_" + param_str + ".log" 
+    log_file = logging_base + exec_time + "_matching_exp_" + param_str + ".log"
     outdir = './results/matching_exp/' + param_str
 
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
@@ -70,6 +70,10 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     t = time.time() - start
     logging.info("[TOTAL TIME]: %f" % t)
 
+    # construct the matrix of assignments
+    solution = prob.prev_sols[-1]
+    assn_mat = np.array([ solution[prob.var_name(i,j)] for i in range(n_rev) for j in range(n_pap) ])
+
     # bookkeeping
     all_rev_affs.append(prob.prev_rev_affs[-1].reshape(-1))
     all_pap_affs.append(prob.prev_pap_affs[-1].reshape(-1))
@@ -79,10 +83,12 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     createDir(outdir + "/weights")
     createDir(outdir + "/rev_affs")
     createDir(outdir + "/pap_affs")
+    createDir(outdir + "/assignments")
 
     np.savetxt(outdir + "/weights/" + exec_time + "-weights.csv", weights, delimiter=',')
     np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
     np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
+    np.savetxt(outdir + "/assignments/" + exec_time + "-assignments.csv", assn_mat, delimiter=',')
 
     print "**************************************************************"
     print "OBJECTIVE: " + str(prob.objective_val())
