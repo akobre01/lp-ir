@@ -110,7 +110,7 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     print "ASSIGNMENTS written to: %s" % assignment_file
     print "MAKESPAN written to: %s" % makespan_file
     print "to produce stats of the result run:"
-    print "  python analyzeMatching.py %s %s -m %s" % (args.weights_file, assignment_file, makespan_file)
+    print "python analyzeMatching.py %s %s -m %s" % (args.weights_file, assignment_file, makespan_file)
     print "**************************************************************"
 
 
