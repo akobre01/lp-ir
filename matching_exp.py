@@ -29,7 +29,7 @@ def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws
     now = datetime.datetime.now()
     exec_time = now.strftime("%Y%m%d_%H%M%S%f")
     logging_base = './logs/' if log_file_dir == None else log_file_dir
-    log_file = logging_base + exec_time + "_matching_exp_" + param_str + ".log" 
+    log_file = logging_base + "matching_exp_" + matcher + '-' + weights_file[10:] + ".log" 
     outdir = './results/matching_exp/' + param_str
 
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
