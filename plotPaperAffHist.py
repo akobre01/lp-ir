@@ -6,8 +6,12 @@ from matplotlib import pyplot as plt
 
 def read_files_in_dir(directory):
     data = []
+    count = 0
     for filename in os.listdir(directory):
+        if count >= 5:
+            continue
         data.append(np.genfromtxt(directory + "/" + filename, delimiter=','))
+        count += 1
     return np.array(data)
 
 
