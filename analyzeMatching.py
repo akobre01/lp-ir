@@ -23,7 +23,5 @@ if __name__ == "__main__":
     print "%0.2f" % analyzer.obj()
     print "%0.2f | %0.2f | %0.2f" % (analyzer.min_score(), analyzer.max_score(), analyzer.mean_score())
     print
-    print "makespan | # violations | min vio | max vio | mean vio | max rev weight"
-    print "%0.2f | %d (%0.1f%%) | %0.2f | %0.2f | %0.2f | %0.2f" % (analyzer.makespan, analyzer.num_ms_vio(), 100.0 * analyzer.num_ms_vio() / len(analyzer.weights[0]), analyzer.min_ms_vio(), analyzer.max_ms_vio(), analyzer.mean_ms_vio(), analyzer.max_weight())
     print "ALG & obj & makepsan & #violations & mean score & std score"
     print " & %0.2f & %0.2f & %d (%0.1f%%) & %0.2f & %0.2f\\\\" % (analyzer.obj(), analyzer.makespan, analyzer.num_ms_vio(), 100.0 * analyzer.num_ms_vio() / len(analyzer.weights[0]), analyzer.mean_score(), analyzer.std_score())
