@@ -27,6 +27,9 @@ class MatchingAnalyzer:
     def mean_ms_vio(self):
         return np.mean(map(lambda x: self.makespan - x, self.ms_vio()))
 
+    def std_ms_vio(self):
+        return np.std(map(lambda x: self.makespan - x, self.ms_vio()))
+
     def mean_score(self):
         return np.mean(self.paper_scores())
 
