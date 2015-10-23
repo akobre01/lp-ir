@@ -33,6 +33,9 @@ class MatchingAnalyzer:
     def mean_score(self):
         return np.mean(self.paper_scores())
 
+    def std_score(self):
+        return np.std(self.paper_scores())
+
     def max_score(self):
         return max(self.paper_scores())
 
