@@ -45,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument('npap', type=int, help='# of papers')
     parser.add_argument('bp1', type=float, help='alpha parameter for the beta distribution')
     parser.add_argument('bp2', type=float, help='beta parameter for the beta distribution')
+    parser.add_argument('structure', type=str, help='either skill_based or uniform for now')
 
     args = parser.parse_args()
 
@@ -56,8 +57,11 @@ if __name__ == "__main__":
                 raise # This was not a "directory exist" error..
 
     outdir = './weights/'
-    outfile = outdir + "-".join(map(lambda x: str(x), [args.name, args.nrev, args.npap, args.bp1, args.bp2, "skill_based"])) + ".out"
+    outfile = outdir + "-".join(map(lambda x: str(x), [args.name, args.nrev, args.npap, args.bp1, args.bp2, args.structure])) + ".out"
 
     createDir(outdir)
-    weights = skillBased(args.nrev, args.npap, args.bp1, args.bp2)
+    if args.structure == 'skill_based':
+        weights = skillBased(args.nrev, args.npap, args.bp1, args.bp2)
+    elif args.structure == 'uniform':
+        weights = fromUni(args.nrev, args.npap)
     np.savetxt(outfile, weights)
