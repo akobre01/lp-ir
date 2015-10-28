@@ -38,6 +38,22 @@ def showWeights(weights):
     plt.ylabel("Reviewers")
     plt.show()
 
+def integerWeights(n_rev, n_pap, bp1, bp2, reviewer_alpha=2):
+    weights = skillBased(n_rev, n_pap, bp1, bp2, reviewer_alpha=2)
+    for i in range(np.size(weights, axis=0)):
+        for j in range(np.size(weights, axis=1)):
+            if weights[i,j] < 0.2:
+                weights[i,j] = 0.0
+            elif weights[i,j] < 0.4:
+                weights[i,j] = 1.0
+            elif weights[i,j] < 0.6:
+                weights[i,j] = 2.0
+            elif weights[i,j] < 0.8:
+                weights[i,j] = 3.0
+            else:
+                weights[i,j] = 4.0
+    return weights
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Arguments for creating weight files.')
     parser.add_argument('name', type=str, help='The name of the file')
@@ -45,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument('npap', type=int, help='# of papers')
     parser.add_argument('bp1', type=float, help='alpha parameter for the beta distribution')
     parser.add_argument('bp2', type=float, help='beta parameter for the beta distribution')
-    parser.add_argument('structure', type=str, help='either skill_based or uniform for now')
+    parser.add_argument('structure', type=str, help='either skill_based or uniform or integer')
 
     args = parser.parse_args()
 
@@ -64,4 +80,6 @@ if __name__ == "__main__":
         weights = skillBased(args.nrev, args.npap, args.bp1, args.bp2)
     elif args.structure == 'uniform':
         weights = fromUni(args.nrev, args.npap)
+    elif args.structure == 'integer':
+        weights = integerWeights(args.nrev, args.npap, args.bp1, args.bp2)
     np.savetxt(outfile, weights)
