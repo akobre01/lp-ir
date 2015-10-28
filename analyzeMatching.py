@@ -19,9 +19,5 @@ if __name__ == "__main__":
     alpha = np.genfromtxt(args.alpha_file, delimiter=',') if args.alpha_file else sys.maxint
 
     analyzer = MatchingAnalyzer(weights, assignments, makespan, alpha)
-    print "obj | min | max | mean"
-    print "%0.2f" % analyzer.obj()
-    print "%0.2f | %0.2f | %0.2f" % (analyzer.min_score(), analyzer.max_score(), analyzer.mean_score())
-    print
     print "ALG & obj & makepsan & #violations & mean score & std score"
     print " & %0.2f & %0.2f & %d (%0.1f%%) & %0.2f & %0.2f\\\\" % (analyzer.obj(), analyzer.makespan, analyzer.num_ms_vio(), 100.0 * analyzer.num_ms_vio() / len(analyzer.weights[0]), analyzer.mean_score(), analyzer.std_score())
