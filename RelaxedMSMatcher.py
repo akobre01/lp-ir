@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import time
 import uuid
 
 from gurobipy import *
@@ -172,7 +173,11 @@ class RelaxedMSMatcher(object):
             mx = self.alpha * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
+        begin_opt = time.time()
         self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1, log_file)
+        end_opt = time.time()
+        if log_file:
+            logging.info("[SOLVER TIME]: %s" % (str(end_opt - begin_opt)))
 
         sol = {}
         for v in self.m.getVars():

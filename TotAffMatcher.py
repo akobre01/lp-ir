@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import time
 import uuid
 
 from gurobipy import *
@@ -78,7 +79,12 @@ class TotAffMatcher(object):
         return count
 
     def solve(self, log_file=None):
+        begin_opt = time.time()
         self.m.optimize()
+        end_opt = time.time()
+        if log_file:
+            logging.info("[SOLVER TIME]: %s" % (str(end_opt - begin_opt)))
+
         sol = {}
         for v in self.m.getVars():
             sol[v.varName] = v.x
