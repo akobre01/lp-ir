@@ -16,12 +16,28 @@ def skillBased(n_rev, n_pap, bp1, bp2, reviewer_alpha=2):
         weights.append(np.random.beta(reviewer_alpha, reviewer_beta, n_pap))
     return np.array(weights)
 
+def skillAndDifficulty(n_rev, n_pap, bp1, bp2, alpha=2):
+    weights = []
+    skills = []
+    ease = []
+    for i in range(n_rev):
+        skills.append(np.random.beta(bp1, bp2))
+    for j in range(n_pap):
+        ease.append(np.random.beta(bp1, bp2))
+    for i in range(n_rev):
+        weights.append([])
+        for j in range(n_pap):
+            beta = (2.0 - skills[i] - ease[j]) * alpha / (skills[i] + ease[j])
+            weights[i].append(np.random.beta(alpha,beta,1))
+    return np.array(weights)
+
 def fromUni(n_rev, n_pap):
     return np.random.rand(n_rev, n_pap)
 
 def showWeights(weights):
+    weights = weights.reshape(weights.shape[:2])
     reviewer_order = np.array(sorted(weights, key=lambda row: np.sum(row)))
-    paper_order = np.array(sorted(weights.T, key=lambda row: np.sum(row))).T
+    paper_order = np.array(sorted(reviewer_order.T, key=lambda row: -np.sum(row))).T
     cMap = plt.get_cmap("Blues")
 
     plt.subplot(2,1,1)
@@ -82,4 +98,8 @@ if __name__ == "__main__":
         weights = fromUni(args.nrev, args.npap)
     elif args.structure == 'integer':
         weights = integerWeights(args.nrev, args.npap, args.bp1, args.bp2)
+    elif args.structure == 'skill_and_difficulty':
+        weights = skillAndDifficulty(args.nrev, args.npap, args.bp1, args.bp2)
+
+#    showWeights(weights)
     np.savetxt(outfile, weights)
