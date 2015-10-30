@@ -1,21 +1,21 @@
-!/bin/bash
+#!/bin/bash
 
 # Uniform scores
 python analyzeMatching.py ./weights/exp10-500-900-0.0-0.0-uniform.out ./results/matching_exp/affinity_500_900_6_3/assignments/20151025_211505622932-assignments.csv -m ./results/matching_exp/affinity_500_900_6_3/makespan/20151025_211505622932-makespan.csv
-grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_affinity-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
-grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_affinity-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_affinity-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_affinity-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
 
 python analyzeMatching.py ./weights/exp10-500-900-0.0-0.0-uniform.out ./results/matching_exp/relaxed_500_900_6_3/assignments/20151025_211505639276-assignments.csv -m ./results/matching_exp/relaxed_500_900_6_3/makespan/20151025_211505639276-makespan.csv
-grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_relaxed-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
-grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_relaxed-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_relaxed-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_relaxed-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
 
 python analyzeMatching.py ./weights/exp10-500-900-0.0-0.0-uniform.out ./results/matching_exp/complete-relax_500_900_6_3/assignments/20151025_211505634055-assignments.csv -m ./results/matching_exp/complete-relax_500_900_6_3/makespan/20151025_211505634055-makespan.csv
-grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_complete-relax-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
-grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_complete-relax-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_complete-relax-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_complete-relax-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
 
 python analyzeMatching.py ./weights/exp10-500-900-0.0-0.0-uniform.out ./results/matching_exp/makespan_500_900_6_3/assignments/20151025_211505627063-assignments.csv -m ./results/matching_exp/makespan_500_900_6_3/makespan/20151025_211505627063-makespan.csv
-grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_makespan-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
-grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_makespan-exp10-500-900-0.5-2.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[SOLVER TIME]" logs/20151025211451/matching_exp_makespan-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151025211451/matching_exp_makespan-exp10-500-900-0.0-0.0-uniform.out.log | rev | cut -d ' ' -f1 | rev
 
 # Original Skill Based
 python analyzeMatching.py ./weights/exp1-500-900-0.5-2.0-skill_based.out ./results/matching_exp/affinity_500_900_6_3/assignments/20151022_170140894619-assignments.csv -m ./results/matching_exp/affinity_500_900_6_3/makespan/20151022_170140894619-makespan.csv
