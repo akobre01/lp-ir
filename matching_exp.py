@@ -25,9 +25,9 @@ def createDir(dir_name):
 
 def runMatching(n_rev, n_pap, alpha, beta, verbose=False, matcher='affinity', ws=None, weights_file=None, log_file_dir=None):
     # Logging and results
-    param_str = '_'.join(map(lambda x: str(x), [matcher, n_rev, n_pap, alpha, beta]))
     now = datetime.datetime.now()
     exec_time = now.strftime("%Y%m%d_%H%M%S%f")
+    param_str = '_'.join(map(lambda x: str(x), [exec_time, matcher, n_rev, n_pap, alpha, beta]))
     logging_base = './logs/' if log_file_dir == None else log_file_dir
     log_file = logging_base + "matching_exp_" + matcher + '-' + weights_file[10:] + ".log" 
     outdir = './results/matching_exp/' + param_str
