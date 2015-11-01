@@ -21,7 +21,7 @@ EXP_NAMES=()
 #                       matcher
 
 #############################
-# SKILL BASED INTEGER EXPERIMENTS
+# SKILL BASED INTEGER EXPERIMENTS (OLD)
 #############################
 EXPERIMENTS+=("500 900 3 6 'relaxed' -f ./weights/exp11-500-900-0.5-2.0-integer.out -l ${OUTDIR}/")
 EXPERIMENTS+=("500 900 3 6 'relaxed' -f ./weights/exp12-500-900-0.5-2.0-integer.out -l ${OUTDIR}/")

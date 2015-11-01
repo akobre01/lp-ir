@@ -55,7 +55,7 @@ def showWeights(weights):
     plt.show()
 
 def integerWeights(n_rev, n_pap, bp1, bp2, reviewer_alpha=2):
-    weights = skillBased(n_rev, n_pap, bp1, bp2, reviewer_alpha=2)
+    weights = skillAndDifficulty(n_rev, n_pap, bp1, bp2, reviewer_alpha)
     for i in range(np.size(weights, axis=0)):
         for j in range(np.size(weights, axis=1)):
             if weights[i,j] < 0.2:
