@@ -40,15 +40,9 @@ def showWeights(weights):
     paper_order = np.array(sorted(reviewer_order.T, key=lambda row: -np.sum(row))).T
     cMap = plt.get_cmap("Blues")
 
-    plt.subplot(2,1,1)
-    reviewer_heatmap = plt.pcolor(reviewer_order, cmap=cMap)
+    plt.subplot(1,1,1)
+    reviewer_heatmap = plt.pcolor(paper_order, cmap=cMap)
     plt.colorbar(reviewer_heatmap)
-    plt.title("Reviewer-paper Affinities")
-    plt.xlabel("Papers")
-    plt.ylabel("Reviewers")
-    plt.subplot(2,1,2)
-    paper_heatmap = plt.pcolor(paper_order, cmap=cMap)
-    plt.colorbar(paper_heatmap)
     plt.title("Reviewer-paper Affinities")
     plt.xlabel("Papers")
     plt.ylabel("Reviewers")
@@ -101,5 +95,5 @@ if __name__ == "__main__":
     elif args.structure == 'skill_and_difficulty':
         weights = skillAndDifficulty(args.nrev, args.npap, args.bp1, args.bp2)
 
-#    showWeights(weights)
-    np.savetxt(outfile, weights)
+    showWeights(weights)
+#    np.savetxt(outfile, weights)
