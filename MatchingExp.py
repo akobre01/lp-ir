@@ -15,7 +15,7 @@ from CompleteRelaxationMSMatcher import CompleteRelaxationMSMatcher
 
 import weights as wgts
 
-def createDir(dir_name):
+def create_dir(dir_name):
     try:
         os.makedirs(dir_name)
     except OSError, e:
@@ -54,20 +54,33 @@ class MatchingExp:
         # Logging and results
         now = datetime.datetime.now()
         exec_time = now.strftime("%Y%m%d_%H%M%S%f")
-        param_str = "%s_%s_%s_%s_%s_%s" % \
-                    (exec_time, self.matcher, self.matcher.n_rev,
-                     self.matcher.n_pap, self.matcher.alpha, self.matcher.beta)
+        param_str = "a-%s_b-%s_r-%s_p-%s" % \
+                    (self.matcher.alpha, self.matcher.beta, self.matcher.n_rev, self.matcher.n_pap)
 
-        logging_base = './logs/' if log_file_dir == None else log_file_dir
-        log_file = "%s_matching-exp_%s_%s.log" % \
-                   (logging_base,  self.matcher,  self.weights_file[10:])
-        outdir = './results/matching_exp/%s' % param_str
+        logging_base = './logs' if log_file_dir == None else log_file_dir
+        results_base = './results'
+
+        last_slash = self.weights_file.rfind('/')
+        second_to_last_slash = self.weights_file[:last_slash].rfind('/')
+        weight_file_name = self.weights_file[second_to_last_slash + 1 : last_slash]
+
+        create_dir(logging_base)
+        create_dir("%s/%s" % (logging_base, weight_file_name))
+        create_dir("%s/%s" % (results_base, weight_file_name))
+        create_dir("%s/%s/%s" % (logging_base, weight_file_name, param_str))
+        create_dir("%s/%s/%s" % (results_base, weight_file_name, param_str))
+
+        log_dir = "%s/%s/%s" % (logging_base, weight_file_name, param_str)
+        res_dir = "%s/%s/%s" % (results_base, weight_file_name, param_str)
+
+        log_file = "%s/%s-%s.log" % (log_dir, exec_time, self.matcher.__class__.__name__)
+        res_file = "%s/%s-%s" % (res_dir, exec_time, self.matcher.__class__.__name__)
 
         logging.basicConfig(filename=log_file, level=logging.DEBUG)
 
         print "**************************************************************"
-        print "RESULTS TO BE WRITTEN TO: %s" % str(outdir)
-        print "LOG FILE: %s" % log_file
+        print "RESULTS WRITTEN TO PREFIX: %s" % res_file
+        print "LOGS WRITTEN TO: %s" % log_file
         print "**************************************************************"
 
         if verbose:
@@ -97,22 +110,13 @@ class MatchingExp:
         all_rev_affs.append(self.matcher.prev_rev_affs[-1].reshape(-1))
         all_pap_affs.append(self.matcher.prev_pap_affs[-1].reshape(-1))
 
-        # save data to csv
-        createDir(outdir)
-        createDir(outdir + "/weights")
-        createDir(outdir + "/rev_affs")
-        createDir(outdir + "/pap_affs")
-        createDir(outdir + "/assignments")
-        createDir(outdir + "/makespan")
+        np.savetxt('%s-rev_affs.csv' % res_file, all_rev_affs, delimiter=',')
+        np.savetxt('%s-pap_affs.csv' % res_file, all_pap_affs, delimiter=',')
+        np.savetxt('%s-assignments.csv' % res_file, assn_mat, delimiter=',')
+        np.savetxt('%s-makespan.csv' % res_file, makespan, delimiter=',')
 
-        np.savetxt(outdir + "/weights/" + exec_time + "-weights.csv", self.weights, delimiter=',')
-        np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
-        np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
-        np.savetxt(outdir + "/assignments/" + exec_time + "-assignments.csv", assn_mat, delimiter=',')
-        np.savetxt(outdir + "/makespan/" + exec_time + "-makespan.csv", makespan, delimiter=',')
-
-        assignment_file = outdir + "/assignments/" + exec_time + "-assignments.csv"
-        makespan_file = outdir + "/makespan/" + exec_time + "-makespan.csv"
+        assignment_file = "%s-assignments.csv" % res_file
+        makespan_file = '%s-makespan.csv' % res_file
 
         print "**************************************************************"
         print "OBJECTIVE: %s" % str(self.matcher.objective_val())
