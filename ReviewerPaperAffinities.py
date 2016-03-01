@@ -1,6 +1,7 @@
 from collections import defaultdict
 from matplotlib import pyplot as plt
 
+import argparse
 import numpy as np
 import xml.etree.ElementTree as ET
 
@@ -39,17 +40,33 @@ class ReviewerPaperAffinities:
                 aff_mat[rev_idx][sub_idx] = self.aff_dict[sub_id][rev_id]
         return aff_mat
 
+    def serialize(self, out_file):
+        aff_mat = self.toMatrix()
+        # Create stats file
+        f = open('./matching-inputs/%s-stats.txt' % out_file, 'w')
+        f.write("PAPERS: %d\n" % self.sub_count)
+        f.write("REVIEWERS: %d\n" % self.rev_count)
+        f.write("MEAN SCORE: %f\n" % np.mean(aff_mat))
+        f.write("MAX SCORE: %f\n" % np.max(aff_mat))
+        f.write("MIN SCORE: %f\n" % np.min(aff_mat))
+        f.close()
+
+        # Create weights file
+        np.savetxt('./matching-inputs/%s-weights.txt' % out_file, aff_mat)
+
+        # Create histogram of weights
+        plt.hist(np.ravel(aff_mat), bins=100)
+        plt.title(out_file)
+        plt.xlabel('scores')
+        plt.ylabel('#reviewers with score')
+        plt.savefig('./matching-inputs/%s-hist.png' % out_file)
+
 
 if __name__ == "__main__":
-    rpa = ReviewerPaperAffinities("data/toronto_scores.xml")
-    print rpa.sub_count
-    print rpa.rev_count
-    print rpa.aff_dict.keys()[:5]
-    aff_mat = rpa.toMatrix()
-    print aff_mat.shape
-    print "MEAN: %f" % np.mean(aff_mat)
-    print "MAX: %f" % np.max(aff_mat)
-    print "MIN: %f" % np.min(aff_mat)
-    print "SHAPE: %s" % np.ravel(aff_mat).shape
-    plt.hist(np.ravel(aff_mat))
-    plt.show()
+    parser = argparse.ArgumentParser(description='Input File')
+    parser.add_argument('scorefile', type=str, help='The absolute path of the score file')
+    parser.add_argument('base_outfile', type=str, help='The director and base name of the output file')
+
+    args = parser.parse_args()
+    rpa = ReviewerPaperAffinities(args.scorefile)
+    rpa.serialize(args.base_outfile)
