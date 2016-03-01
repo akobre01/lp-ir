@@ -27,30 +27,23 @@ class MatchingExp:
     """Run a matching experiment
     """
 
-    def __init__(self, matcher, weight_file, alpha, beta):
+    def __init__(self, matcher, weight_file, alpha, beta, log_file_dir=None, verbose=False):
         # construct new problem instance
         self.weights_file = weight_file
         self.weights = np.genfromtxt(weight_file)
         if matcher.lower() == 'makespan':
-            logging.info("[MATCHER]: makespan")
             self.matcher = MakespanMatcher(alpha, beta, self.weights)
         elif matcher.lower() == 'distortion':
-            logging.info("[MATCHER]: distortion")
             self.matcher = DistortionMatcher(alpha, beta, self.weights)
         elif matcher.lower() == 'relaxed':
-            logging.info("[MATCHER]: relaxed makespan")
             self.matcher = RelaxedMSMatcher(alpha, beta, self.weights)
         elif matcher.lower() == 'complete-relax':
-            logging.info("[MATCHER]: completely relaxed makespan")
             self.matcher = CompleteRelaxationMSMatcher(alpha, beta, self.weights)
         elif matcher.lower() == 'revpap':
-            logging.info("[MATCHER]: relax-reviewer and paper  makespan")
             self.matcher = RelaxRevPaPMatcher(alpha, beta, self.weights)
         else:
-            logging.info("[MATCHER]: sum total affinity")
             self.matcher = TotAffMatcher(alpha, beta, self.weights)
 
-    def solve(self, verbose=False, log_file_dir=None):
         # Logging and results
         now = datetime.datetime.now()
         exec_time = now.strftime("%Y%m%d_%H%M%S%f")
@@ -73,21 +66,25 @@ class MatchingExp:
         log_dir = "%s/%s/%s" % (logging_base, weight_file_name, param_str)
         res_dir = "%s/%s/%s" % (results_base, weight_file_name, param_str)
 
-        log_file = "%s/%s-%s.log" % (log_dir, exec_time, self.matcher.__class__.__name__)
-        res_file = "%s/%s-%s" % (res_dir, exec_time, self.matcher.__class__.__name__)
+        self.log_file = "%s/%s-%s.log" % (log_dir, exec_time, self.matcher.__class__.__name__)
+        self.res_file = "%s/%s-%s" % (res_dir, exec_time, self.matcher.__class__.__name__)
 
-        logging.basicConfig(filename=log_file, level=logging.DEBUG)
+        logging.basicConfig(filename=self.log_file, level=logging.DEBUG)
 
         print "**************************************************************"
-        print "RESULTS WRITTEN TO PREFIX: %s" % res_file
-        print "LOGS WRITTEN TO: %s" % log_file
+        print "RESULTS WRITTEN TO PREFIX: %s" % self.res_file
+        print "LOGS WRITTEN TO: %s" % self.log_file
         print "**************************************************************"
 
         if verbose:
             self.matcher.turn_on_verbosity()
 
+        logging.info("[MATCHER]: %s" % self.matcher.__class__.__name__)
+
+
+    def solve(self):
         start = time.time()
-        self.matcher.solve(log_file=log_file)
+        self.matcher.solve(log_file=self.log_file)
         t = time.time() - start
         logging.info("[TOTAL TIME]: %f" % t)
 
@@ -98,7 +95,7 @@ class MatchingExp:
             for i in range(self.matcher.n_rev) ])
 
         # makespan
-        if self.matcher.__class__.__name__.lower() in set(['relaxed','complete-relax','makespan']):
+        if self.matcher.__class__.__name__.lower() in set(['MakespanMatcher']):
             makespan = np.array([self.matcher.makespan])
         else:
             makespan = np.array([0.0])
@@ -110,13 +107,13 @@ class MatchingExp:
         all_rev_affs.append(self.matcher.prev_rev_affs[-1].reshape(-1))
         all_pap_affs.append(self.matcher.prev_pap_affs[-1].reshape(-1))
 
-        np.savetxt('%s-rev_affs.csv' % res_file, all_rev_affs, delimiter=',')
-        np.savetxt('%s-pap_affs.csv' % res_file, all_pap_affs, delimiter=',')
-        np.savetxt('%s-assignments.csv' % res_file, assn_mat, delimiter=',')
-        np.savetxt('%s-makespan.csv' % res_file, makespan, delimiter=',')
+        np.savetxt('%s-rev_affs.csv' % self.res_file, all_rev_affs, delimiter=',')
+        np.savetxt('%s-pap_affs.csv' % self.res_file, all_pap_affs, delimiter=',')
+        np.savetxt('%s-assignments.csv' % self.res_file, assn_mat, delimiter=',')
+        np.savetxt('%s-makespan.csv' % self.res_file, makespan, delimiter=',')
 
-        assignment_file = "%s-assignments.csv" % res_file
-        makespan_file = '%s-makespan.csv' % res_file
+        assignment_file = "%s-assignments.csv" % self.res_file
+        makespan_file = '%s-makespan.csv' % self.res_file
 
         print "**************************************************************"
         print "OBJECTIVE: %s" % str(self.matcher.objective_val())
@@ -147,5 +144,7 @@ if __name__ == "__main__":
     matchingExp = MatchingExp(args.matcher,
                               args.weights_file,
                               args.max_reviews_per_reviewer,
-                              args.reviews_per_paper)
-    matchingExp.solve(args.verbose, args.log_file_dir)
+                              args.reviews_per_paper,
+                              args.log_file_dir,
+                              args.verbose)
+    matchingExp.solve()
