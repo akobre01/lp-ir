@@ -18,9 +18,9 @@ class TotAffMatcher(object):
                 This should be a numpy matrix of dimension  n_rev x n_pap.
     """
 
-    def __init__(self, n_rev, n_pap, alpha, beta, weights):
-        self.n_rev = n_rev
-        self.n_pap = n_pap
+    def __init__(self, alpha, beta, weights):
+        self.n_rev = np.size(weights, axis=0)
+        self.n_pap = np.size(weights, axis=1)
         self.alpha = alpha
         self.beta = beta
         self.weights = weights

@@ -1,0 +1,147 @@
+import argparse
+import datetime
+import logging
+import math
+import numpy as np
+import time
+import os
+
+from TotAffMatcher import TotAffMatcher
+from MakespanMatcher import MakespanMatcher
+from DistortionMatcher import DistortionMatcher
+from RelaxedMSMatcher import RelaxedMSMatcher
+from RelaxRevPaPMatcher import RelaxRevPaPMatcher
+from CompleteRelaxationMSMatcher import CompleteRelaxationMSMatcher
+
+import weights as wgts
+
+def createDir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError, e:
+        if e.errno != 17:
+            raise # This was not a "directory exist" error..
+
+
+class MatchingExp:
+    """Run a matching experiment
+    """
+
+    def __init__(self, matcher, weight_file, alpha, beta):
+        # construct new problem instance
+        self.weights_file = weight_file
+        self.weights = np.genfromtxt(weight_file)
+        if matcher.lower() == 'makespan':
+            logging.info("[MATCHER]: makespan")
+            self.matcher = MakespanMatcher(alpha, beta, self.weights)
+        elif matcher.lower() == 'distortion':
+            logging.info("[MATCHER]: distortion")
+            self.matcher = DistortionMatcher(alpha, beta, self.weights)
+        elif matcher.lower() == 'relaxed':
+            logging.info("[MATCHER]: relaxed makespan")
+            self.matcher = RelaxedMSMatcher(alpha, beta, self.weights)
+        elif matcher.lower() == 'complete-relax':
+            logging.info("[MATCHER]: completely relaxed makespan")
+            self.matcher = CompleteRelaxationMSMatcher(alpha, beta, self.weights)
+        elif matcher.lower() == 'revpap':
+            logging.info("[MATCHER]: relax-reviewer and paper  makespan")
+            self.matcher = RelaxRevPaPMatcher(alpha, beta, self.weights)
+        else:
+            logging.info("[MATCHER]: sum total affinity")
+            self.matcher = TotAffMatcher(alpha, beta, self.weights)
+
+    def solve(self, verbose=False, log_file_dir=None):
+        # Logging and results
+        now = datetime.datetime.now()
+        exec_time = now.strftime("%Y%m%d_%H%M%S%f")
+        param_str = "%s_%s_%s_%s_%s_%s" % \
+                    (exec_time, self.matcher, self.matcher.n_rev,
+                     self.matcher.n_pap, self.matcher.alpha, self.matcher.beta)
+
+        logging_base = './logs/' if log_file_dir == None else log_file_dir
+        log_file = "%s_matching-exp_%s_%s.log" % \
+                   (logging_base,  self.matcher,  self.weights_file[10:])
+        outdir = './results/matching_exp/%s' % param_str
+
+        logging.basicConfig(filename=log_file, level=logging.DEBUG)
+
+        print "**************************************************************"
+        print "RESULTS TO BE WRITTEN TO: %s" % str(outdir)
+        print "LOG FILE: %s" % log_file
+        print "**************************************************************"
+
+        if verbose:
+            self.matcher.turn_on_verbosity()
+
+        start = time.time()
+        self.matcher.solve(log_file=log_file)
+        t = time.time() - start
+        logging.info("[TOTAL TIME]: %f" % t)
+
+        # construct the matrix of assignments
+        solution = self.matcher.prev_sols[-1]
+        assn_mat = np.array([
+            np.array([ solution[self.matcher.var_name(i,j)]  for j in range(self.matcher.n_pap) ])
+            for i in range(self.matcher.n_rev) ])
+
+        # makespan
+        if self.matcher.__class__.__name__.lower() in set(['relaxed','complete-relax','makespan']):
+            makespan = np.array([self.matcher.makespan])
+        else:
+            makespan = np.array([0.0])
+
+        # bookkeeping
+        all_rev_affs = []
+        all_pap_affs = []
+
+        all_rev_affs.append(self.matcher.prev_rev_affs[-1].reshape(-1))
+        all_pap_affs.append(self.matcher.prev_pap_affs[-1].reshape(-1))
+
+        # save data to csv
+        createDir(outdir)
+        createDir(outdir + "/weights")
+        createDir(outdir + "/rev_affs")
+        createDir(outdir + "/pap_affs")
+        createDir(outdir + "/assignments")
+        createDir(outdir + "/makespan")
+
+        np.savetxt(outdir + "/weights/" + exec_time + "-weights.csv", self.weights, delimiter=',')
+        np.savetxt(outdir + "/rev_affs/" + exec_time + "-rev_affs.csv", all_rev_affs, delimiter=',')
+        np.savetxt(outdir + "/pap_affs/" + exec_time + "-pap_affs.csv", all_pap_affs, delimiter=',')
+        np.savetxt(outdir + "/assignments/" + exec_time + "-assignments.csv", assn_mat, delimiter=',')
+        np.savetxt(outdir + "/makespan/" + exec_time + "-makespan.csv", makespan, delimiter=',')
+
+        assignment_file = outdir + "/assignments/" + exec_time + "-assignments.csv"
+        makespan_file = outdir + "/makespan/" + exec_time + "-makespan.csv"
+
+        print "**************************************************************"
+        print "OBJECTIVE: %s" % str(self.matcher.objective_val())
+        print "WEIGHTS used: %s" % self.weights_file
+        print "ASSIGNMENTS written to: %s" % assignment_file
+        print "MAKESPAN written to: %s" % makespan_file
+        print "to produce stats of the result run:"
+        print "python analyzeMatching.py %s %s -m %s" % (self.weights_file, assignment_file, makespan_file)
+        print "**************************************************************"
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Experiment Parameters.')
+    parser.add_argument('max_reviews_per_reviewer',
+                        type=int, help='the max number of reviews per reviewer')
+    parser.add_argument('reviews_per_paper',
+                        type=int, help='the number of reviews per paper')
+    parser.add_argument('matcher',
+                        type=str, help='either affinity (default), makespan or two-phase')
+    parser.add_argument('weights_file',
+                        type=str, help='file from which to load weights; required set flag')
+    parser.add_argument('-l','--log_file_dir',
+                        type=str, help='the base directory into which to write the log of this run')
+    parser.add_argument('-v', '--verbose',
+                        help='print gurobi output', action='store_true')
+
+    args = parser.parse_args()
+    matchingExp = MatchingExp(args.matcher,
+                              args.weights_file,
+                              args.max_reviews_per_reviewer,
+                              args.reviews_per_paper)
+    matchingExp.solve(args.verbose, args.log_file_dir)

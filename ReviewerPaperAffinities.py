@@ -2,7 +2,9 @@ from collections import defaultdict
 from matplotlib import pyplot as plt
 
 import argparse
+import json
 import numpy as np
+import os
 import xml.etree.ElementTree as ET
 
 class ReviewerPaperAffinities:
@@ -40,10 +42,18 @@ class ReviewerPaperAffinities:
                 aff_mat[rev_idx][sub_idx] = self.aff_dict[sub_id][rev_id]
         return aff_mat
 
-    def serialize(self, out_file):
+    def serialize(self, outdir):
+
+        try:
+            os.makedirs('./matching-inputs/%s/' % outdir)
+        except OSError, e:
+            if e.errno != 17:
+                raise # This was not a "directory exist" error..
+
+
         aff_mat = self.toMatrix()
         # Create stats file
-        f = open('./matching-inputs/%s-stats.txt' % out_file, 'w')
+        f = open('./matching-inputs/%s/stats.txt' % outdir, 'w')
         f.write("PAPERS: %d\n" % self.sub_count)
         f.write("REVIEWERS: %d\n" % self.rev_count)
         f.write("MEAN SCORE: %f\n" % np.mean(aff_mat))
@@ -51,22 +61,32 @@ class ReviewerPaperAffinities:
         f.write("MIN SCORE: %f\n" % np.min(aff_mat))
         f.close()
 
+        # Create map from reviewer to index
+        f = open('./matching-inputs/%s/revidx.json' % outdir, 'w')
+        f.write(json.dumps(self.all_revs))
+        f.close()
+
+        # Create map from submission to index
+        f = open('./matching-inputs/%s/subidx.json' % outdir, 'w')
+        f.write(json.dumps(self.all_subs))
+        f.close()
+
         # Create weights file
-        np.savetxt('./matching-inputs/%s-weights.txt' % out_file, aff_mat)
+        np.savetxt('./matching-inputs/%s/weights.txt' % outdir, aff_mat)
 
         # Create histogram of weights
         plt.hist(np.ravel(aff_mat), bins=100)
-        plt.title(out_file)
+        plt.title(outdir)
         plt.xlabel('scores')
         plt.ylabel('#reviewers with score')
-        plt.savefig('./matching-inputs/%s-hist.png' % out_file)
+        plt.savefig('./matching-inputs/%s/hist.png' % outdir)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Input File')
     parser.add_argument('scorefile', type=str, help='The absolute path of the score file')
-    parser.add_argument('base_outfile', type=str, help='The director and base name of the output file')
+    parser.add_argument('base_outdir', type=str, help='The name of the directory under matching-inputs to store the output')
 
     args = parser.parse_args()
     rpa = ReviewerPaperAffinities(args.scorefile)
-    rpa.serialize(args.base_outfile)
+    rpa.serialize(args.base_outdir)
