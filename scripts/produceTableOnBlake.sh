@@ -67,3 +67,20 @@ grep -F "INFO:root:[TOTAL TIME]" logs/20151029163529/matching_exp_complete-relax
 python analyzeMatching.py ./weights/exp21-500-900-0.5-2.0-skill_and_difficulty.out ./results/matching_exp/makespan_500_900_6_3/assignments/20151029_163536286982-assignments.csv -m ./results/matching_exp/makespan_500_900_6_3/makespan/20151029_163536286982-makespan.csv
 grep -F "INFO:root:[SOLVER TIME]" logs/20151029163529/matching_exp_makespan-exp21-500-900-0.5-2.0-skill_and_difficulty.out.log | rev | cut -d ' ' -f1 | rev
 grep -F "INFO:root:[TOTAL TIME]" logs/20151029163529/matching_exp_makespan-exp21-500-900-0.5-2.0-skill_and_difficulty.out.log | rev | cut -d ' ' -f1 | rev
+
+# skill and difficulty integer scores
+python analyzeMatching.py ./weights/exp26-500-900-0.5-2.0-integer.out ./results/matching_exp/20151101_114324347799_affinity_500_900_6_3/assignments/20151101_114324347799-assignments.csv -m ./results/matching_exp/20151101_114324347799_affinity_500_900_6_3/makespan/20151101_114324347799-makespan.csv
+grep -F "INFO:root:[SOLVER TIME]" logs/20151101114313/matching_exp_affinity-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151101114313/matching_exp_affinity-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+
+python analyzeMatching.py ./weights/exp26-500-900-0.5-2.0-integer.out ./results/matching_exp/20151101_114324360416_relaxed_500_900_6_3/assignments/20151101_114324360416-assignments.csv -m ./results/matching_exp/20151101_114324360416_relaxed_500_900_6_3/makespan/20151101_114324360416-makespan.csv
+grep -F "INFO:root:[SOLVER TIME]" logs/20151101114313/matching_exp_relaxed-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151101114313/matching_exp_relaxed-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+
+python analyzeMatching.py ./weights/exp26-500-900-0.5-2.0-integer.out ./results/matching_exp/20151101_114324533324_complete-relax_500_900_6_3/assignments/20151101_114324533324-assignments.csv -m ./results/matching_exp/20151101_114324533324_complete-relax_500_900_6_3/makespan/20151101_114324533324-makespan.csv
+grep -F "INFO:root:[SOLVER TIME]" logs/20151101114313/matching_exp_complete-relax-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151101114313/matching_exp_complete-relax-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+
+python analyzeMatching.py ./weights/exp26-500-900-0.5-2.0-integer.out ./results/matching_exp/20151101_114324344426_makespan_500_900_6_3/assignments/20151101_114324344426-assignments.csv -m ./results/matching_exp/20151101_114324344426_makespan_500_900_6_3/makespan/20151101_114324344426-makespan.csv
+grep -F "INFO:root:[SOLVER TIME]" logs/20151101114313/matching_exp_makespan-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
+grep -F "INFO:root:[TOTAL TIME]" logs/20151101114313/matching_exp_makespan-exp26-500-900-0.5-2.0-integer.out.log | rev | cut -d ' ' -f1 | rev
