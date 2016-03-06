@@ -18,6 +18,21 @@ class SeqIncreaseMake:
         self.curr_makespan = 0.0
         self.mkspn_and_sol = []
 
+    def min_pap(self, assignments):
+        pap_affs = np.sum(self.weights * assignments, axis=0)
+        assert(len(pap_affs) == self.n_pap)
+        return np.min(pap_affs)
+
+    def max_pap(self, assignments):
+        pap_affs = np.sum(self.weights * assignments, axis=0)
+        assert(len(pap_affs) == self.n_pap)
+        return np.max(pap_affs)
+
+    def mean_pap(self, assignments):
+        pap_affs = np.sum(self.weights * assignments, axis=0)
+        assert(len(pap_affs) == self.n_pap)
+        return np.mean(pap_affs)
+
     def solve_with_curr_makespan(self):
         """
         THIS CODE DOES NOT USE WARM STARTING
@@ -44,22 +59,31 @@ class SeqIncreaseMake:
             overall_percent_change = "%.2f%%" % (100.0 * self.num_diffs(assignments, prev_assignments) / np.size(assignments))
             percent_reviews_change = "%.2f%%" % (100.0 * self.num_diffs(assignments, prev_assignments) / (self.n_pap * self.beta * 2.0))   # percet of total reviews that change
             percent_reviews_change_from_init = "%.2f%%" % (100.0 * self.num_diffs(assignments, init_assignment) / (self.n_pap * self.beta * 2.0))   # percet of total reviews that changes
+            max_pap = "%.2f" % (self.max_pap(assignments))
+            min_pap = "%.2f" % (self.min_pap(assignments))
+            mean_pap = "%.2f" % (self.mean_pap(assignments))
         else:
             overall_percent_change = "----"
             percent_reviews_change = "----"
             percent_reviews_change_from_init = "----"
+            max_pap = "----"
+            min_pap = "----"
+            mean_pap = "----"
         return "\t".join(map(lambda x: str(x), ["%.2f" % self.curr_makespan,
                                                 self.n_pap,
                                                 self.n_rev,
                                                 self.alpha,
                                                 self.beta,
+                                                max_pap,
+                                                min_pap,
+                                                mean_pap,
                                                 overall_percent_change,
                                                 percent_reviews_change,
                                                 percent_reviews_change_from_init,
                                                 "%.2fs" % float(t)]))
 
     def run_exp(self, out_file=None):
-        header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "%X", "%R", "%R0", "TIME"])
+        header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "MAX", "MIN", "MEAN", "%X", "%R", "%R0", "TIME"])
         print header
         if out_file is not None:
             out_file.write("%s\n" % header)

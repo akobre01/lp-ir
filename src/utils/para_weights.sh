@@ -2,15 +2,11 @@
 
 TIME=`(date +%Y%m%d%H%M%S)`
 
-BASE_SRC_DIR="/home/akobren/akobren-on-canvas/software/repos/git/lp-ir/src/utils/"
 BASE_LOG_DIR="/home/akobren/akobren-on-canvas/software/repos/git/lp-ir/logs/"
 EXPERIMENT_FILE="/home/akobren/akobren-on-canvas/software/repos/git/lp-ir/src/utils/weights.py"
 OUTDIR="${BASE_LOG_DIR}/${TIME}"
 
-# the name of the symbolic link to this run's directory
-LATEST=latest
 mkdir -p $OUTDIR
-#ln -Ffhs $OUTDIR "${EXPERIMENTS_BASE_DIR}/${LATEST}"
 
 # experimental parameters
 
