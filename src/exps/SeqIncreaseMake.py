@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import sys
+import time
 
 from gurobipy import *
 sys.path.insert(0,'..')
@@ -18,6 +19,9 @@ class SeqIncreaseMake:
         self.mkspn_and_sol = []
 
     def solve_with_curr_makespan(self):
+        """
+        THIS CODE DOES NOT USE WARM STARTING
+        """
         problem = MakespanMatcher(self.n_rev, self.n_pap, self.alpha, self.beta, self.weights, self.curr_makespan)
         problem.solve_with_current_makespan()
         status = problem.status()
@@ -30,25 +34,38 @@ class SeqIncreaseMake:
     def num_diffs(self, a1, a2):
         return float(np.sum(np.abs(a1 - a2)))   # this assumes that the
 
-    def report_result(self, assignments, prev_assignments):
+    def report_result(self, assignments, prev_assignments, init_assignment, t):
         if assignments is not None and prev_assignments is not None:
-            percent_change = self.num_diffs(assignments, prev_assignments) / np.size(assignments)
+            overall_percent_change = 100.0 * self.num_diffs(assignments, prev_assignments) / np.size(assignments)
+            percent_reviews_change = 100.0 * self.num_diffs(assignments, prev_assignments) / (self.n_pap * self.beta * 2.0)   # percet of total reviews that change
+            percent_reviews_change_from_init = 100.0 * self.num_diffs(assignments, init_assignment) / (self.n_pap * self.beta * 2.0)   # percet of total reviews that changes
         else:
-            percent_change = "INFEASIBLE"
-        return "\t".join(map(lambda x: str(x), [self.curr_makespan,
+            overall_percent_change = "----"
+            percent_reviews_change = "----"
+            percent_reviews_change_from_init = "----"
+        return "\t".join(map(lambda x: str(x), ["%.2f" % self.curr_makespan,
                                                 self.n_pap,
                                                 self.n_rev,
                                                 self.alpha,
                                                 self.beta,
-                                                percent_change]))
+                                                overall_percent_change,
+                                                percent_reviews_change,
+                                                percent_reviews_change_from_init,
+                                                "%.2fs" % float(t)]))
 
     def run_exp(self):
-        prev_assignment = np.zeros((self.n_rev, self.n_pap))
+        print "\t".join(["MKSPN","#PAP", "#REV", "ALPHA", "BETA", "%X", "%R", "%R0", "TIME"])
+        self.curr_makespan = 0
+        self.solve_with_curr_makespan()
+        init_assignment = self.mkspn_and_sol[-1][1]
+        prev_assignment = init_assignment
         for mkspn in self.mkspns:
             self.curr_makespan = mkspn
+            s = time.time()
             self.solve_with_curr_makespan()
-            assignment = sim.mkspn_and_sol[-1][1]
-            print(self.report_result(assignment, prev_assignment))
+            t = time.time() - s
+            assignment = self.mkspn_and_sol[-1][1]
+            print(self.report_result(assignment, prev_assignment, init_assignment, t))
             prev_assignment = assignment
 
 
@@ -76,5 +93,5 @@ if __name__ == "__main__":
     n_pap = np.size(weights, axis=1)
     step = args.step
 
-    sim = SeqIncreaseMake(n_rev, n_pap, rev_max, pap_revs, weights, [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5])
+    sim = SeqIncreaseMake(n_rev, n_pap, rev_max, pap_revs, weights, np.linspace(1.5,3.5, 10))
     sim.run_exp()
