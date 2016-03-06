@@ -31,14 +31,19 @@ class SeqIncreaseMake:
             self.mkspn_and_sol.append((self.curr_makespan, None))
         return (status, problem)
 
+    def largest_makespan(self):
+        return sorted(filter(lambda (x,y): y is not None,
+                             self.mkspn_and_sol),
+                      key=lambda (x,y): -x)[0][0]
+
     def num_diffs(self, a1, a2):
         return float(np.sum(np.abs(a1 - a2)))   # this assumes that the
 
     def report_result(self, assignments, prev_assignments, init_assignment, t):
         if assignments is not None and prev_assignments is not None:
-            overall_percent_change = 100.0 * self.num_diffs(assignments, prev_assignments) / np.size(assignments)
-            percent_reviews_change = 100.0 * self.num_diffs(assignments, prev_assignments) / (self.n_pap * self.beta * 2.0)   # percet of total reviews that change
-            percent_reviews_change_from_init = 100.0 * self.num_diffs(assignments, init_assignment) / (self.n_pap * self.beta * 2.0)   # percet of total reviews that changes
+            overall_percent_change = "%.2f%%" % (100.0 * self.num_diffs(assignments, prev_assignments) / np.size(assignments))
+            percent_reviews_change = "%.2f%%" % (100.0 * self.num_diffs(assignments, prev_assignments) / (self.n_pap * self.beta * 2.0))   # percet of total reviews that change
+            percent_reviews_change_from_init = "%.2f%%" % (100.0 * self.num_diffs(assignments, init_assignment) / (self.n_pap * self.beta * 2.0))   # percet of total reviews that changes
         else:
             overall_percent_change = "----"
             percent_reviews_change = "----"
@@ -53,8 +58,12 @@ class SeqIncreaseMake:
                                                 percent_reviews_change_from_init,
                                                 "%.2fs" % float(t)]))
 
-    def run_exp(self):
-        print "\t".join(["MKSPN","#PAP", "#REV", "ALPHA", "BETA", "%X", "%R", "%R0", "TIME"])
+    def run_exp(self, out_file=None):
+        header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "%X", "%R", "%R0", "TIME"])
+        print header
+        if out_file is not None:
+            out_file.write("%s\n" % header)
+
         self.curr_makespan = 0
         self.solve_with_curr_makespan()
         init_assignment = self.mkspn_and_sol[-1][1]
@@ -65,8 +74,13 @@ class SeqIncreaseMake:
             self.solve_with_curr_makespan()
             t = time.time() - s
             assignment = self.mkspn_and_sol[-1][1]
-            print(self.report_result(assignment, prev_assignment, init_assignment, t))
+            report = self.report_result(assignment, prev_assignment, init_assignment, t)
+            print report
+            if out_file is not None:
+                out_file.write("%s\n" % report)
             prev_assignment = assignment
+            if assignment is None:
+                break
 
 
 if __name__ == "__main__":
@@ -93,5 +107,23 @@ if __name__ == "__main__":
     n_pap = np.size(weights, axis=1)
     step = args.step
 
-    sim = SeqIncreaseMake(n_rev, n_pap, rev_max, pap_revs, weights, np.linspace(1.5,3.5, 10))
-    sim.run_exp()
+    out_dir = args.weight_file[:args.weight_file.rfind('/')]
+    stats_file_name = "seqmkspn.stats"
+    full_stats_file = "%s/%s" % (out_dir, stats_file_name)
+    max_threshold_file = "mxthresh-MakespanMatcher-alpha-%s-beta-%s" % (args.rev_max, args.pap_revs)
+
+
+    mn = 0
+    mx = n_pap * pap_revs
+    mkspns = np.linspace(mn, mx, mx / step + 1)
+
+    # Run increasing makespans and write to stats file
+    sim = SeqIncreaseMake(n_rev, n_pap, rev_max, pap_revs, weights, mkspns)
+    f = open(full_stats_file, 'w')
+    sim.run_exp(f)
+    f.close()
+
+    # Write the largest threshold found to file
+    f = open('%s/%s' % (out_dir, max_threshold_file), 'w')
+    f.write("%f\n" % sim.largest_makespan())
+    f.close()
