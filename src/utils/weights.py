@@ -3,6 +3,9 @@ import os
 
 import numpy as np
 
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib import pyplot as plt
 
 def fromBeta(n_rev, n_pap, bp1, bp2):
