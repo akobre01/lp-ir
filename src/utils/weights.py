@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument('bp1', type=float, help='alpha parameter for the beta distribution')
     parser.add_argument('bp2', type=float, help='beta parameter for the beta distribution')
     parser.add_argument('structure', type=str, help='either uniform, skill_based, skill_and_difficulty or integer')
-    parser.add_argument('plot', type=bool, help='whether or not to plot the affinity matrix')
+    parser.add_argument('--plot', action='store_true')
 
     args = parser.parse_args()
 
