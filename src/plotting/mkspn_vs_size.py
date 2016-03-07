@@ -48,3 +48,4 @@ if __name__ == "__main__":
     plt.xlabel('bp1')
     plt.ylabel('mkspn')
     plt.savefig('bp_vs_mkspn.png')
+    print size_to_bp_and_mkspn
