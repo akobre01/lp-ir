@@ -3,6 +3,8 @@ import numpy as np
 import os
 
 from collections import defaultdict
+#import matplotlib
+#matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
@@ -13,7 +15,8 @@ if __name__ == "__main__":
 
     train_dir = args.train_dir
     ds = os.listdir(train_dir)
-    size_and_bp_to_mkspn = defaultdict(dict)
+    size_to_bp_and_mkspn = defaultdict(list)
+    bp_to_size_and_mkspn = defaultdict(list)
     for d in ds:
         splits = d.split('-')
         revs,paps,bp1,bp2,_ = float(splits[0]), float(splits[1]), float(splits[2]), float(splits[3]), splits[4]
@@ -26,7 +29,14 @@ if __name__ == "__main__":
             f = open('%s/%s/%s' % (train_dir, d, fname), 'r')
             mkspn = float(f.readline().strip())
             f.close()
-            size_and_bp_to_mkspn[revs][bp1] = mkspn
+            size_to_bp_and_mkspn[revs].append((bp1, mkspn))
+            bp_to_size_and_mkspn[bp1].append((revs, mkspn))
 
 
-    print size_and_bp_to_mkspn
+    mkspn_and_bp = []
+    plt.subplot(1,1,1)
+    for size, bp_mkspns in size_to_bp_and_mkspn.iteritems():
+        xs = map(lambda (x,y): x, bp_mkspns)
+        ys = map(lambda (x,y): y, bp_mkspns)
+        plt.plot(xs,ys, label=size)
+    plt.savefig('test.png')
