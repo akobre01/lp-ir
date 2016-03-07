@@ -38,5 +38,5 @@ if __name__ == "__main__":
     for size, bp_mkspns in size_to_bp_and_mkspn.iteritems():
         xs = map(lambda (x,y): x, bp_mkspns)
         ys = map(lambda (x,y): y, bp_mkspns)
-        plt.plot(xs,ys, label=size)
+        plt.scatter(xs,ys, label=size)
     plt.savefig('test.png')
