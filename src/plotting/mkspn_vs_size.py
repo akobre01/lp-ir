@@ -6,6 +6,7 @@ from collections import defaultdict
 #import matplotlib
 #matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+import matplotlib.cm as cm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Arguments for plotting.')
@@ -35,8 +36,15 @@ if __name__ == "__main__":
 
     mkspn_and_bp = []
     plt.subplot(1,1,1)
+    colors = iter(cm.rainbow(np.linspace(0, 1, len(size_to_bp_and_mkspn.keys()))))
+    scatters = []
+    keys = []
     for size, bp_mkspns in size_to_bp_and_mkspn.iteritems():
         xs = map(lambda (x,y): x, bp_mkspns)
         ys = map(lambda (x,y): y, bp_mkspns)
-        plt.scatter(xs,ys, label=size)
-    plt.savefig('test.png')
+        scatters.append(plt.scatter(xs,ys, color=next(colors), label=size))
+        keys.append(size)
+    plt.legend(tuple(scatters), tuple(map(lambda x: str(x), keys)))
+    plt.xlabel('bp1')
+    plt.ylabel('mkspn')
+    plt.savefig('bp_vs_mkspn.png')
