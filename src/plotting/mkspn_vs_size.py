@@ -33,19 +33,36 @@ if __name__ == "__main__":
             size_to_bp_and_mkspn[revs].append((bp1, mkspn))
             bp_to_size_and_mkspn[bp1].append((revs, mkspn))
 
-
-    mkspn_and_bp = []
-    plt.subplot(1,1,1)
+    plt.clf()
     colors = iter(cm.rainbow(np.linspace(0, 1, len(size_to_bp_and_mkspn.keys()))))
     scatters = []
     keys = []
+    xs = []
+    ys = []
     for size, bp_mkspns in size_to_bp_and_mkspn.iteritems():
         xs = map(lambda (x,y): x, bp_mkspns)
         ys = map(lambda (x,y): y, bp_mkspns)
         scatters.append(plt.scatter(xs,ys, color=next(colors), label=size))
         keys.append(size)
-    plt.legend(tuple(scatters), tuple(map(lambda x: str(x), keys)))
+    plt.legend(tuple(scatters), tuple(map(lambda x: str(x), keys)), loc='lower right')
     plt.xlabel('bp1')
     plt.ylabel('mkspn')
+    plt.title('largest feasible makespan')
     plt.savefig('bp_vs_mkspn.png')
-    print size_to_bp_and_mkspn
+
+    colors = iter(cm.rainbow(np.linspace(0, 1, len(bp_to_size_and_mkspn.keys()))))
+    scatters = []
+    keys = []
+    plt.subplot(1,1,1)
+    print bp_to_size_and_mkspn
+    for bp, size_mkspn in bp_to_size_and_mkspn.iteritems():
+        xs = map(lambda (x,y): x, size_mkspn)
+        ys = map(lambda (x,y): y, size_mkspn)
+        scatters.append(plt.scatter(xs,ys, color=next(colors), label=size))
+        keys.append(bp)
+    plt.legend(tuple(scatters), tuple(map(lambda x: str(x), keys)), loc='lower right')
+    plt.xlabel('size')
+    plt.ylabel('mkspn')
+    plt.ylabel('largest feasible makespan')
+    plt.savefig('size_vs_mkspn.png')
+
