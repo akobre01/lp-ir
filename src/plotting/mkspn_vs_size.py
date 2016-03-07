@@ -53,6 +53,7 @@ if __name__ == "__main__":
     colors = iter(cm.rainbow(np.linspace(0, 1, len(bp_to_size_and_mkspn.keys()))))
     scatters = []
     keys = []
+    plt.clf()
     plt.subplot(1,1,1)
     print bp_to_size_and_mkspn
     for bp, size_mkspn in bp_to_size_and_mkspn.iteritems():
