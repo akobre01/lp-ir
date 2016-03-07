@@ -7,7 +7,7 @@ from gurobipy import *
 
 class MakespanMatcher(object):
     """makespan paper matching; tries to maximize the minimum sum of affinities for any paper
-
+    This uses branch and bound.
     Attributes:
       n_Rev - the number of reviewers
       n_Pap - the number of papers
