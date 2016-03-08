@@ -152,7 +152,7 @@ if __name__ == "__main__":
     matcher = args.matcher
 
     out_dir = args.weight_file[:args.weight_file.rfind('/')]
-    stats_file_name = "seqmkspn.stats"
+    stats_file_name = "%s-seqmkspn.stats" % args.matcher
     full_stats_file = "%s/%s" % (out_dir, stats_file_name)
     max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher, args.rev_max, args.pap_revs)
 
