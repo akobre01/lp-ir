@@ -17,9 +17,9 @@ class MakespanMatcher(object):
                 This should be a numpy matrix of dimension  n_rev x n_pap.
     """
 
-    def __init__(self, n_rev, n_pap, alpha, beta, weights, makespan=0):
-        self.n_rev = n_rev
-        self.n_pap = n_pap
+    def __init__(self, alpha, beta, weights, makespan=0):
+        self.n_rev = np.size(weights, axis=0)
+        self.n_pap = np.size(weights, axis=1)
         self.alpha = alpha
         self.beta = beta
         self.weights = weights
@@ -106,10 +106,10 @@ class MakespanMatcher(object):
     def var_name(self,i,j):
         return "x_" + str(i) + "," + str(j)
 
-    def indicies_of_var(self, v):
+    def indices_of_var(self, v):
         name = v.varName
-        indicies = name[2:].split(',')
-        i, j = int(indicies[0]), int(indicies[1])
+        indices = name[2:].split(',')
+        i, j = int(indices[0]), int(indices[1])
         return i,j
 
     def sol_dict(self):
@@ -129,7 +129,7 @@ class MakespanMatcher(object):
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
             solution = np.zeros((self.n_rev, self.n_pap))
             for v in self.m.getVars():
-                i,j = self.indicies_of_var(v)
+                i,j = self.indices_of_var(v)
                 solution[i,j] = v.x
             self.solution = solution
             return solution
@@ -163,18 +163,13 @@ class MakespanMatcher(object):
         return self.m.ObjVal
 
 if __name__ == "__main__":
-    n_rev = 100
-    n_pap = 250
-    alpha = 8
+    alpha = 3
     beta = 3
-    weights = np.random.rand(n_rev, n_pap)
-    init_makespan = 0
+    weights = np.genfromtxt('../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
+    init_makespan = 1.5
 
-    x = FairMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
-    x.find_makespan_bin(0, alpha, 5)
-    print x.makespan
-    x.m.optimize()
-    print x.status()
-
-    for p in range(x.n_pap):
-        assert sum([ x.m.getVarByName(x.var_name(i,p)).x * x.weights[i][p] for i in range(x.n_rev) ]) >= x.makespan
+    x = MakespanMatcher(alpha, beta, weights, init_makespan)
+    s = time.time()
+    x.solve_with_current_makespan()
+    print (time.time() - s)
+    print "[done.]"

@@ -5,8 +5,6 @@ import uuid
 
 from gurobipy import *
 
-import weights as wgts
-
 class IRMakespanMatcher(object):
     """An iterative paper matching problem instance that tries to satisfy
     a makespan constraint at each paper using an approximation algorithm based
@@ -133,11 +131,17 @@ class IRMakespanMatcher(object):
             _sol[v.varName] = v.x
         return _sol
 
+    def indices_of_var(self, v):
+        name = v.varName
+        indices = name[2:].split(',')
+        i, j = int(indices[0]), int(indices[1])
+        return i,j
+
     def sol_as_mat(self):
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
             solution = np.zeros((self.n_rev, self.n_pap))
             for v in self.m.getVars():
-                i,j = self.indicies_of_var(v)
+                i,j = self.indices_of_var(v)
                 solution[i,j] = v.x
             self.solution = solution
             return solution
@@ -187,11 +191,16 @@ class IRMakespanMatcher(object):
         if log_file:
             logging.info("[OBJ]: %f" % self.objective_val())
 
-    def round_fractional(self, integral_assignments, log_file=None, count = 0):
+    def round_fractional(self, integral_assignments=None, log_file=None, count = 0):
+        if integral_assignments is None:
+            integral_assignments = np.ones((self.n_rev, self.n_pap)) * -1
+
         self.m.optimize()
 
+        if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
+            return
+
         if self.integral_sol_found():
-            print "FOUND INTEGRAL SOLUTION"
             if log_file:
                 logging.info('[#ITERATIONS]: %d' % count)
             return
@@ -270,18 +279,13 @@ class IRMakespanMatcher(object):
         return self.m.ObjVal
 
 if __name__ == "__main__":
-    n_rev = 10
-    n_pap = 10
-    alpha = 1
-    beta = 1
-    bp1 = 0.5
-    bp2 = 5.0
-    weights = wgts.skillBased(n_rev, n_pap, bp1, bp2)
-    init_makespan = 0
+    alpha = 3
+    beta = 3
+    weights = np.genfromtxt('../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
+    init_makespan = 1.5  # took this from the training mx threshold in data/train dir
 
-    np.set_printoptions(precision=3)
-    print "running"
-    x = RelaxedMSMatcher(n_rev, n_pap, alpha, beta, weights, init_makespan)
-    x.solve()
-
+    x = IRMakespanMatcher(alpha, beta, weights, init_makespan)
+    s = time.time()
+    x.solve_with_current_makespan()
+    print (time.time() - s)
     print "[done.]"

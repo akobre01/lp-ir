@@ -6,17 +6,19 @@ import time
 from gurobipy import *
 sys.path.insert(0,'..')
 from matching_models.MakespanMatcher import MakespanMatcher
+from matching_models.IRMakespanMatcher import IRMakespanMatcher
 
 class SeqIncreaseMake:
-    def __init__(self, n_rev, n_pap, alpha, beta, weights, mkspns):
-        self.n_rev = n_rev
-        self.n_pap = n_pap
+    def __init__(self, alpha, beta, weights, mkspns, matcher):
+        self.n_rev = np.size(weights, axis=0)
+        self.n_pap = np.size(weights, axis=1)
         self.alpha = alpha
         self.beta = beta
         self.weights = weights
         self.mkspns = mkspns
         self.curr_makespan = 0.0
         self.mkspn_and_sol = []
+        self.matcher = matcher
 
     def min_pap(self, assignments):
         pap_affs = np.sum(self.weights * assignments, axis=0)
@@ -37,7 +39,12 @@ class SeqIncreaseMake:
         """
         THIS CODE DOES NOT USE WARM STARTING
         """
-        problem = MakespanMatcher(self.n_rev, self.n_pap, self.alpha, self.beta, self.weights, self.curr_makespan)
+        if self.matcher == 'bb':
+            problem = MakespanMatcher(self.alpha, self.beta, self.weights, self.curr_makespan)
+        elif self.matcher == 'ir':
+            problem = IRMakespanMatcher(self.alpha, self.beta, self.weights, self.curr_makespan)
+        else:
+            raise Exception("You must specify the matcher to use")
         problem.solve_with_current_makespan()
         status = problem.status()
         if status == GRB.OPTIMAL:
@@ -54,6 +61,14 @@ class SeqIncreaseMake:
     def num_diffs(self, a1, a2):
         return float(np.sum(np.abs(a1 - a2)))   # this assumes that the
 
+    def survival(self, assignments):
+        scores = np.sum(assignments * self.weights, axis=0)
+        max_score = np.max(scores)
+        survival_score = 0.0
+        for score_threshold in np.linspace(0, max_score, max_score / 0.1 + 1):
+            survival_score += len(filter(lambda x: x >= score_threshold, scores))
+        return float(survival_score) / float(self.n_pap)
+
     def report_result(self, assignments, prev_assignments, init_assignment, t):
         if assignments is not None and prev_assignments is not None:
             overall_percent_change = "%.2f%%" % (100.0 * self.num_diffs(assignments, prev_assignments) / np.size(assignments))
@@ -62,6 +77,7 @@ class SeqIncreaseMake:
             max_pap = "%.2f" % (self.max_pap(assignments))
             min_pap = "%.2f" % (self.min_pap(assignments))
             mean_pap = "%.2f" % (self.mean_pap(assignments))
+            survival_score = "%.2f" % (self.survival(assignments))
         else:
             overall_percent_change = "----"
             percent_reviews_change = "----"
@@ -69,6 +85,7 @@ class SeqIncreaseMake:
             max_pap = "----"
             min_pap = "----"
             mean_pap = "----"
+            survival_score = "----"
         return "\t".join(map(lambda x: str(x), ["%.2f" % self.curr_makespan,
                                                 self.n_pap,
                                                 self.n_rev,
@@ -80,10 +97,11 @@ class SeqIncreaseMake:
                                                 overall_percent_change,
                                                 percent_reviews_change,
                                                 percent_reviews_change_from_init,
+                                                survival_score,
                                                 "%.2fs" % float(t)]))
 
     def run_exp(self, out_file=None):
-        header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "MAX", "MIN", "MEAN", "%X", "%R", "%R0", "TIME"])
+        header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "MAX", "MIN", "MEAN", "%X", "%R", "%R0", "SUR", "TIME"])
         print header
         if out_file is not None:
             out_file.write("%s\n" % header)
@@ -113,6 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('pap_revs', type=int, help='# of reviewers per paper')
     parser.add_argument('weight_file', type=str, help='the file from which to read the weights')
     parser.add_argument('step', type=float, help='the step value by which we increase the makespan')
+    parser.add_argument('matcher', type=str, help='the matcher to use, either: "bb" or "ir"')
 
 
     args = parser.parse_args()
@@ -130,19 +149,20 @@ if __name__ == "__main__":
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
     step = args.step
+    matcher = args.matcher
 
     out_dir = args.weight_file[:args.weight_file.rfind('/')]
     stats_file_name = "seqmkspn.stats"
     full_stats_file = "%s/%s" % (out_dir, stats_file_name)
-    max_threshold_file = "mxthresh-MakespanMatcher-alpha-%s-beta-%s" % (args.rev_max, args.pap_revs)
+    max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher, args.rev_max, args.pap_revs)
 
 
     mn = 0
     mx = n_pap * pap_revs
     mkspns = np.linspace(mn, mx, mx / step + 1)
 
-    # Run increasing makespans and write to stats file
-    sim = SeqIncreaseMake(n_rev, n_pap, rev_max, pap_revs, weights, mkspns)
+    # Run increasing makespans and write to stats files
+    sim = SeqIncreaseMake(rev_max, pap_revs, weights, mkspns, matcher)
     f = open(full_stats_file, 'w')
     sim.run_exp(f)
     f.close()
