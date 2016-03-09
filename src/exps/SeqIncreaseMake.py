@@ -7,6 +7,7 @@ from gurobipy import *
 sys.path.insert(0,'..')
 from matching_models.MakespanMatcher import MakespanMatcher
 from matching_models.IRMakespanMatcher import IRMakespanMatcher
+from matching_models.IRDAMakespanMatcher import IRDAMakespanMatcher
 
 class SeqIncreaseMake:
     def __init__(self, alpha, beta, weights, mkspns, matcher):
@@ -43,6 +44,8 @@ class SeqIncreaseMake:
             problem = MakespanMatcher(self.alpha, self.beta, self.weights, self.curr_makespan)
         elif self.matcher == 'ir':
             problem = IRMakespanMatcher(self.alpha, self.beta, self.weights, self.curr_makespan)
+        elif self.matcher == 'da':
+            problem = IRDAMakespanMatcher(self.alpha, self.beta, self.weights, self.curr_makespan)
         else:
             raise Exception("You must specify the matcher to use")
         problem.solve_with_current_makespan()
