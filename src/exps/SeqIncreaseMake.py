@@ -146,13 +146,14 @@ if __name__ == "__main__":
     rev_max = args.rev_max
     pap_revs = args.pap_revs
     weights = np.genfromtxt(args.weight_file)
+    weights_name = args.weight_file[args.weight_file.rfind('/')+1:args.weight_file.rfind('.')]
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
     step = args.step
     matcher = args.matcher
 
     out_dir = args.weight_file[:args.weight_file.rfind('/')]
-    stats_file_name = "%s-seqmkspn.stats" % args.matcher
+    stats_file_name = "%s-%s-seqmkspn-%s-%s.stats" % (args.matcher, weights_name, args.rev_max, args.pap_revs)
     full_stats_file = "%s/%s" % (out_dir, stats_file_name)
     max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher, args.rev_max, args.pap_revs)
 
