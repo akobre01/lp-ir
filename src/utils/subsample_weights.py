@@ -1,6 +1,8 @@
 import argparse
 import os
 
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -24,7 +26,7 @@ if __name__ == "__main__":
 
     nrows = args.nrev
     ncols = args.npap
-    weight_file = args.weight_file
+    weight_file = "%s/weights.txt" % args.weight_file
     weight_file_base = weight_file[:weight_file.rfind('/')]
     sub_sample_file = '%s/weightsample-%s-%s.txt' % (weight_file_base, nrows, ncols)
     plot_file = '%s/weightsample-%s-%s.png' % (weight_file_base, nrows, ncols)
