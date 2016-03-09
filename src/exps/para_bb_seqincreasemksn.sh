@@ -10,6 +10,18 @@ mkdir -p $OUTDIR
 
 EXPERIMENTS=()
 EXP_NAMES=()
+"""
+usage: SeqIncreaseMake.py [-h] rev_max pap_revs weight_file step matcher
+
+Arguments for creating weight files.
+
+positional arguments:
+  rev_max      max # of papers per rev
+  pap_revs     # of reviewers per paper
+  weight_file  the file from which to read the weights
+  step         the step value by which we increase the makespan
+  matcher      the matcher to use, either: "bb" or "ir"
+"""
 # usage: SeqIncreaseMake.py [-h] rev_max pap_revs weight_file step
 # python SeqIncreaseMake.py 3 3 ../../data/train/200-200-2.0-5.0-skill_based/weights.txt 0.5
 #############################
