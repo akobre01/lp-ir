@@ -22,12 +22,13 @@ if __name__ == "__main__":
         splits = d.split('-')
         revs,paps,bp1,bp2,_ = float(splits[0]), float(splits[1]), float(splits[2]), float(splits[3]), splits[4]
         fs = os.listdir('%s/%s' % (train_dir, d))
-        mx_threshs = filter(lambda x: x.startswith('mxthresh-MakespanMatcher'), fs)
+        mx_threshs = filter(lambda x: x.startswith('mxthresh-bb'), fs)
 
         # find all of the parameter settings for matrix
         for fname in mx_threshs:
             splits = fname.split('-')
             f = open('%s/%s/%s' % (train_dir, d, fname), 'r')
+            print '%s/%s/%s' % (train_dir, d, fname)
             mkspn = float(f.readline().strip())
             f.close()
             size_to_bp_and_mkspn[revs].append((bp1, mkspn))
