@@ -14,6 +14,11 @@ def fromBeta(n_rev, n_pap, bp1, bp2):
 def naiveTopical(n_rev, n_pap, n_tops, alpha=0.2):
     return np.random.dirichlet((np.array[alpha] * n_tops), (n_rev, n_pap))
 
+def naiveMinTopical(n_rev, n_pap, n_tops, rev_alpha=0.2, pap_alpha=0.1):
+    affinities = np.random.dirichlet((np.array[rev_alpha] * n_tops), (n_rev, n_pap))
+    paper_tops = np.random.dirichlet((np.array[pap_alpha] * n_tops), n_pap)
+    return np.minimum(affinities, paper_tops)
+
 def skillBased(n_rev, n_pap, bp1, bp2, reviewer_alpha=2):
     weights = []
     for i in range(n_rev):
@@ -103,7 +108,8 @@ if __name__ == "__main__":
     elif args.structure == 'skill_and_difficulty':
         weights = skillAndDifficulty(args.nrev, args.npap, args.bp1, args.bp2)
     elif args.structure == 'topical':
-        weights = skillAndDifficulty(args.nrev, args.npap, 10, args.bp1)
+        topics = 10
+        weights = naiveMinTopical(args.nrev, args.npap, topics, args.bp1, args.bp2)
 
     plt = showWeights(weights)
     plt.savefig(plot_file)
