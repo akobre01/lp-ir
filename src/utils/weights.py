@@ -11,6 +11,9 @@ from matplotlib import pyplot as plt
 def fromBeta(n_rev, n_pap, bp1, bp2):
     return np.random.beta(bp1, bp2, (n_rev, n_pap))
 
+def naiveTopical(n_rev, n_pap, n_tops, alpha=0.2):
+    return np.random.dirichlet((np.array[alpha] * n_tops), (n_rev, n_pap))
+
 def skillBased(n_rev, n_pap, bp1, bp2, reviewer_alpha=2):
     weights = []
     for i in range(n_rev):
@@ -99,6 +102,8 @@ if __name__ == "__main__":
         weights = integerWeights(args.nrev, args.npap, args.bp1, args.bp2)
     elif args.structure == 'skill_and_difficulty':
         weights = skillAndDifficulty(args.nrev, args.npap, args.bp1, args.bp2)
+    elif args.structure == 'topical':
+        weights = skillAndDifficulty(args.nrev, args.npap, 10, args.bp1)
 
     plt = showWeights(weights)
     plt.savefig(plot_file)
