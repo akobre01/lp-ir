@@ -103,7 +103,7 @@ class SeqIncreaseMake:
                                                 survival_score,
                                                 "%.2fs" % float(t)]))
 
-    def run_exp(self, out_file=None):
+    def run_exp(self, out_file=None, out_file_assign=None):
         header = "\t".join(["#MKSPN","#PAP", "#REV", "ALPHA", "BETA", "MAX", "MIN", "MEAN", "%X", "%R", "%R0", "SUR", "TIME"])
         print header
         if out_file is not None:
@@ -123,6 +123,9 @@ class SeqIncreaseMake:
             print report
             if out_file is not None:
                 out_file.write("%s\n" % report)
+            if out_file_assign is not None and assignment is not None:
+                assign_file_name = "%s-%f" % (out_file_assign, mkspn)
+                np.save(assign_file_name, assignment)
             prev_assignment = assignment
             if assignment is None:
                 break
@@ -148,7 +151,7 @@ if __name__ == "__main__":
 
     rev_max = args.rev_max
     pap_revs = args.pap_revs
-    weights = np.genfromtxt(args.weight_file)
+    weights = np.load(args.weight_file)
     weights_name = args.weight_file[args.weight_file.rfind('/')+1:args.weight_file.rfind('.')]
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
@@ -157,7 +160,9 @@ if __name__ == "__main__":
 
     out_dir = args.weight_file[:args.weight_file.rfind('/')]
     stats_file_name = "%s-%s-seqmkspn-%s-%s.stats" % (args.matcher, weights_name, args.rev_max, args.pap_revs)
+    assignment_file_name = "%s-%s-seqmkspn-%s-%s.assignment" % (args.matcher, weights_name, args.rev_max, args.pap_revs)
     full_stats_file = "%s/%s" % (out_dir, stats_file_name)
+    full_assignment_file = "%s/%s" % (out_dir, assignment_file_name)
     max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher, args.rev_max, args.pap_revs)
 
 
@@ -168,7 +173,7 @@ if __name__ == "__main__":
     # Run increasing makespans and write to stats files
     sim = SeqIncreaseMake(rev_max, pap_revs, weights, mkspns, matcher)
     f = open(full_stats_file, 'w')
-    sim.run_exp(f)
+    sim.run_exp(f, full_assignment_file)
     f.close()
 
     # Write the largest threshold found to file
