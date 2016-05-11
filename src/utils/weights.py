@@ -11,38 +11,38 @@ from matplotlib import pyplot as plt
 def fromBeta(n_rev, n_pap, bp1, bp2):
     return np.random.beta(bp1, bp2, (n_rev, n_pap))
 
-def naiveTopical(n_rev, n_pap, n_tops, alpha=0.2):
-    return np.random.dirichlet(np.array([alpha] * n_tops), (n_rev, n_pap))
+# def naiveTopical(n_rev, n_pap, n_tops, alpha=0.2):
+#     return np.random.dirichlet(np.array([alpha] * n_tops), (n_rev, n_pap))
 
-def naiveMinTopical(n_rev, n_pap, n_tops, rev_alpha=0.2, pap_alpha=0.1):
-    affinities = np.random.dirichlet(np.array([rev_alpha] * n_tops), (n_rev, n_pap))
-    paper_tops = np.random.dirichlet(np.array([pap_alpha] * n_tops), n_pap)
-    return np.sum(np.minimum(affinities, paper_tops), axis=2)
+# def naiveMinTopical(n_rev, n_pap, n_tops, rev_alpha=0.2, pap_alpha=0.1):
+#     affinities = np.random.dirichlet(np.array([rev_alpha] * n_tops), (n_rev, n_pap))
+#     paper_tops = np.random.dirichlet(np.array([pap_alpha] * n_tops), n_pap)
+#     return np.sum(np.minimum(affinities, paper_tops), axis=2)
 
-def skillTopical(n_rev, n_pap, n_tops, bp1=0.2, bp2=0.1, reviewer_alpha=2.0):
-    reviewers = []
-    for i in range(n_rev):
-        reviewer_skill = np.random.beta(bp1, bp2)
-        reviewer_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / reviewer_skill
-        rev_topics = np.random.beta(reviewer_alpha, reviewer_beta, n_tops)
-        rev_topics = rev_topics / np.sum(rev_topics)
-        reviewers.append(np.random.dirichlet(rev_topics))
+# def skillTopical(n_rev, n_pap, n_tops, bp1=0.2, bp2=0.1, reviewer_alpha=2.0):
+#     reviewers = []
+#     for i in range(n_rev):
+#         reviewer_skill = np.random.beta(bp1, bp2)
+#         reviewer_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / reviewer_skill
+#         rev_topics = np.random.beta(reviewer_alpha, reviewer_beta, n_tops)
+#         rev_topics = rev_topics / np.sum(rev_topics)
+#         reviewers.append(np.random.dirichlet(rev_topics))
 
-    papers = []
-    for i in range(n_pap):
-        paper_alpha = np.random.beta(bp1, bp2)
-        paper_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / paper_alpha
-        paper_topics = np.random.beta(reviewer_alpha, paper_beta, n_tops)
-        paper_topics = paper_topics / np.sum(paper_topics)
-        papers.append(np.random.dirichlet(paper_topics))
+#     papers = []
+#     for i in range(n_pap):
+#         paper_alpha = np.random.beta(bp1, bp2)
+#         paper_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / paper_alpha
+#         paper_topics = np.random.beta(reviewer_alpha, paper_beta, n_tops)
+#         paper_topics = paper_topics / np.sum(paper_topics)
+#         papers.append(np.random.dirichlet(paper_topics))
 
-    weights = []
-    for rev in reviewers:
-        pap_topic_score = []
-        for pap in papers:
-            pap_topic_score.append(np.sum(np.minimum(rev, pap)))
-        weights.append(np.array(pap_topic_score))
-    return np.array(weights)
+#     weights = []
+#     for rev in reviewers:
+#         pap_topic_score = []
+#         for pap in papers:
+#             pap_topic_score.append(np.sum(np.minimum(rev, pap)))
+#         weights.append(np.array(pap_topic_score))
+#     return np.array(weights)
 
     # weights = []
     # for i in range(n_rev):
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     outdir = '../../data/train/'
     outdir += "-".join(map(lambda x: str(x), [args.nrev, args.npap, args.bp1, args.bp2, args.structure]))
-    out_file = '%s/weights.txt' % outdir
+    out_file = '%s/weights' % outdir
     plot_file = '%s/weights.png' % outdir
 
     createDir(outdir)
@@ -145,12 +145,12 @@ if __name__ == "__main__":
         weights = integerWeights(args.nrev, args.npap, args.bp1, args.bp2)
     elif args.structure == 'skill_and_difficulty':
         weights = skillAndDifficulty(args.nrev, args.npap, args.bp1, args.bp2)
-    elif args.structure == 'topical':
-        topics = 30
-        weights = naiveMinTopical(args.nrev, args.npap, topics, args.bp1, args.bp2)
-    elif args.structure == 'skill_topical':
-        topics = 30
-        weights = skillTopical(args.nrev, args.npap, topics, args.bp1, args.bp2)
+    # elif args.structure == 'topical':
+    #     topics = 30
+    #     weights = naiveMinTopical(args.nrev, args.npap, topics, args.bp1, args.bp2)
+    # elif args.structure == 'skill_topical':
+    #     topics = 30
+    #     weights = skillTopical(args.nrev, args.npap, topics, args.bp1, args.bp2)
 
     plt = showWeights(weights)
     plt.savefig(plot_file)
@@ -158,4 +158,4 @@ if __name__ == "__main__":
         plt.show()
 
     print "OUTFILE: %s" % out_file
-    np.savetxt(out_file, weights)
+    np.save(out_file, weights)
