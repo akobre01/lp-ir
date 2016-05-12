@@ -34,9 +34,9 @@ def naiveMinTopical(n_rev, n_pap, n_tops, rev_alpha=0.2, pap_alpha=0.1):
     reviewer_tensor = np.tile(affinities[:,np.newaxis,:], (1,n_pap,1))
     paper_tensor = np.tile(paper_tops[np.newaxis,:,:], (n_rev,1,1))
     score_mat = np.sum(np.minimum(reviewer_tensor, paper_tensor), axis=2)
-    return score_mat, reviewer_tensor, score_mat
+    return score_mat, reviewer_tensor, paper_tensor
 
-def skillTopical(n_rev, n_pap, n_tops, bp1=0.2, bp2=0.1, reviewer_alpha=2.0):
+def skillTopical(n_rev, n_pap, n_tops, bp1=0.2, bp2=0.1, reviewer_alpha=2.0, paper_alpha=0.5):
     """
     Similar to the naiveMinTopical function above except that instead of drawing
     topical expertise (for reviewers and papers) from the same dirichlet every time,
@@ -53,10 +53,12 @@ def skillTopical(n_rev, n_pap, n_tops, bp1=0.2, bp2=0.1, reviewer_alpha=2.0):
 
     papers = []
     for i in range(n_pap):
-        paper_alpha = np.random.beta(bp1, bp2)
-        paper_beta = ((1.0 - reviewer_skill) * reviewer_alpha) / paper_alpha
-        paper_topics = np.random.beta(reviewer_alpha, paper_beta, n_tops)
-        paper_topics = paper_topics / np.sum(paper_topics)
+        # paper_skill = np.random.beta(bp1, bp2)
+        # paper_beta = ((1.0 - paper_skill) * paper_alpha) / paper_skill
+        paper_alpha = 1.0
+        paper_beta = 1.0
+        paper_topics = np.random.beta(paper_alpha, paper_beta, n_tops)
+#        paper_topics = paper_topics / np.sum(paper_topics)
         papers.append(np.random.dirichlet(paper_topics))
 
     # convert these matrices to tensors with the dimensions (n_rev, n_pap, n_tops)

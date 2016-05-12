@@ -30,10 +30,16 @@ if __name__ == "__main__":
         assigned_reviewers = weights * assignment_tensor
 
         # create a paper x topic matrix of the best scores per reviewer
-        group_score = np.amax(assignment_tensor, axis=0)
+        group_max_score = np.amax(assignment_tensor, axis=0)
+        group_eff_score = np.minimum(group_max_score, paper_tensor[0,:,:])
+
+        print group_eff_score
+        print group_eff_score.shape
+        print paper_tensor[0,:,:]
+        print paper_tensor[0,:,:].shape
 
         # get max score per paper
-        fractional_group_score = group_score / paper_tensor[0,:,:]
+        fractional_group_score = group_eff_score / paper_tensor[0,:,:]
 
         affinities = fractional_group_score.reshape(-1)
 
