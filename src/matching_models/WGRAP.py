@@ -66,9 +66,8 @@ class WGRAP(object):
     def _solve_assignment_and_update(self, rows, rows_to_revs, max_val = 10.0):
         print rows
         cost_matrix = self.munkres.make_cost_matrix(rows, lambda v: max_val - v)
-        indexes = self.munkres.compute(rows)
-        print rows
-        print rows[0][0]
+        indexes = self.munkres.compute(cost_matrix)
+        print cost_matrix
         for row, col in indexes:
             print row, col
             value = rows[row][col]
@@ -79,7 +78,7 @@ class WGRAP(object):
 if __name__ == "__main__":
     rev_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
     pap_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
-    alpha = 3
+    alpha = 1
     beta = 1
     rev_mat = np.load(rev_mat_file)
     pap_mat = np.load(pap_mat_file)
