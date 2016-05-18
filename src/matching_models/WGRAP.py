@@ -76,7 +76,7 @@ class WGRAP(object):
                 rows.append(self.marg_gain_for_rev(rev))
         return rows, rows_to_revs
 
-    def refine(self):
+    def refine(self, show=False):
         """
         Implements 1 iteration of stochastic refinement
         """
@@ -89,6 +89,9 @@ class WGRAP(object):
             rev_scores = np.array(rev_scores)
             normed_rev_scores = (np.sum(rev_scores) - rev_scores) / np.sum(rev_scores)
             sample = np.nonzero(np.random.multinomial(1, normed_rev_scores))[0]
+            if show:
+                print normed_rev_scores
+                print sample
             rev_to_remove = assigned_revs[sample]
             assert self.curr_assignment[rev_to_remove, pap] == 1.0
             self.curr_assignment[rev_to_remove, pap] = 0.0
@@ -142,3 +145,19 @@ if __name__ == "__main__":
     rows, rows_to_revs = wgrap._construct_matching_mat(post_refine=True)
     wgrap._solve_assignment_and_update(rows, rows_to_revs, show=True)
     print wgrap.curr_assignment
+
+    print "CORRUPTING THE ASSIGNMENT MATRIX"
+    wgrap.curr_assignment[0,0] = 1.0
+    wgrap.curr_assignment[1,1] = 1.0
+    wgrap.curr_assignment[2,2] = 1.0
+    wgrap.curr_assignment[0,2] = 0.0
+    wgrap.curr_assignment[1,0] = 0.0
+    wgrap.curr_assignment[2,1] = 0.0
+
+    print wgrap.curr_assignment
+    for i in range(10):
+        wgrap.refine(show=True)
+        print wgrap.curr_assignment
+        rows, rows_to_revs = wgrap._construct_matching_mat(post_refine=True)
+        wgrap._solve_assignment_and_update(rows, rows_to_revs, show=False)
+        print wgrap.curr_assignment
