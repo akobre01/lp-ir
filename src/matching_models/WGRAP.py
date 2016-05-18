@@ -76,7 +76,7 @@ class WGRAP(object):
                 rows.append(self.marg_gain_for_rev(rev))
         return rows, rows_to_revs
 
-    def refine(self, show=False):
+    def refine(self, R=0.01, l=0.5, itr=0, show=False):
         """
         Implements 1 iteration of stochastic refinement
         """
@@ -85,7 +85,10 @@ class WGRAP(object):
             rev_scores = []
             for rev in assigned_revs:
                 assert self.curr_assignment[rev,pap] == 1.0
-                rev_scores.append(self.score_mat[rev, pap])
+                r_score = np.exp(-l * itr) * \
+                          self.score_mat[rev, pap] / np.sum(self.score_mat[rev,:])
+                r_score = np.max((r_score, 1.0 / R))
+                rev_scores.append(r_score)
             rev_scores = np.array(rev_scores)
             normed_rev_scores = (np.sum(rev_scores) - rev_scores) / np.sum(rev_scores)
             sample = np.nonzero(np.random.multinomial(1, normed_rev_scores))[0]
