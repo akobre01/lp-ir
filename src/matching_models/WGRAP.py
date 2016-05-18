@@ -15,6 +15,11 @@ class WGRAP(object):
         self.munkres = Munkres()
         self.rev_mat = rev_mat
         self.pap_mat = pap_mat
+
+        reviewer_tensor = np.tile(np.array(self.rev_mat)[:,np.newaxis,:], (1,len(self.pap_mat),1))
+        paper_tensor = np.tile(np.array(self.pap_mat)[np.newaxis,:,:], (len(self.rev_mat),1,1))
+        self.score_mat = np.sum(np.minimum(reviewer_tensor, paper_tensor), axis=2)
+
         self.alpha = alpha
         self.beta = beta
         self.nrevs_per_round = np.ceil(self.alpha / self.beta)
@@ -58,26 +63,58 @@ class WGRAP(object):
     def curr_n_revs(self, rev):
         return np.sum(self.curr_assignment[rev,:])
 
-    def _construct_matching_mat(self):
+    def _construct_matching_mat(self, post_refine=False):
         rows = []
         rows_to_revs = {}
         for rev in range(np.size(self.rev_mat, axis=0)):
-            n_rows = int(np.min((self.alpha - self.curr_n_revs(rev), self.nrevs_per_round)))
+            if post_refine:
+                n_rows = int(self.alpha - self.curr_n_revs(rev))
+            else:
+                n_rows = int(np.min((self.alpha - self.curr_n_revs(rev), self.nrevs_per_round)))
             for row in range(n_rows):
                 rows_to_revs[len(rows)] = rev
                 rows.append(self.marg_gain_for_rev(rev))
         return rows, rows_to_revs
 
-    def _solve_assignment_and_update(self, rows, rows_to_revs, max_val = 10.0):
-        print rows
+    def refine(self):
+        """
+        Implements 1 iteration of stochastic refinement
+        """
+        for pap in range(np.size(self.pap_mat, axis=0)):
+            assigned_revs = np.nonzero(self.curr_assignment[:,pap])[0]
+            rev_scores = []
+            for rev in assigned_revs:
+                assert self.curr_assignment[rev,pap] == 1.0
+                rev_scores.append(self.score_mat[rev, pap])
+            rev_scores = np.array(rev_scores)
+            normed_rev_scores = (np.sum(rev_scores) - rev_scores) / np.sum(rev_scores)
+            sample = np.nonzero(np.random.multinomial(1, normed_rev_scores))[0]
+            rev_to_remove = assigned_revs[sample]
+            assert self.curr_assignment[rev_to_remove, pap] == 1.0
+            self.curr_assignment[rev_to_remove, pap] = 0.0
+
+    def _solve_assignment_and_update(self, rows, rows_to_revs, max_val = 10.0, show=False):
+        """
+        Implements 1 iteration of stagewise deepening (no stochastic refinement)
+        """
+        if show:
+            print rows
         cost_matrix = self.munkres.make_cost_matrix(rows, lambda v: max_val - v)
         indexes = self.munkres.compute(cost_matrix)
-        print cost_matrix
+        if show:
+            print cost_matrix
         for row, col in indexes:
-            value = rows[row][col]
             self.curr_assignment[rows_to_revs[row],col] = 1
-            print '(%d, %d) -> %f' % (row, col, value)
+            if show:
+                value = rows[row][col]
+                print '(%d, %d) -> %f' % (row, col, value)
 
+    def solve(self):
+        for i in range(self.beta):
+            print "ITERATION %d" % i
+            rows, rows_to_revs = wgrap._construct_matching_mat()
+            wgrap._solve_assignment_and_update(rows, rows_to_revs)
+        return self.curr_assignment
 
 if __name__ == "__main__":
     rev_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
@@ -95,8 +132,13 @@ if __name__ == "__main__":
     wgrap = WGRAP(rev_mat, pap_mat, alpha, beta)
 
     rows, rows_to_revs = wgrap._construct_matching_mat()
-    wgrap._solve_assignment_and_update(rows, rows_to_revs)
+    wgrap._solve_assignment_and_update(rows, rows_to_revs, show=True)
     print wgrap.curr_assignment
     rows, rows_to_revs = wgrap._construct_matching_mat()
-    wgrap._solve_assignment_and_update(rows, rows_to_revs)
+    wgrap._solve_assignment_and_update(rows, rows_to_revs, show=True)
+    print wgrap.curr_assignment
+    wgrap.refine()
+    print wgrap.curr_assignment
+    rows, rows_to_revs = wgrap._construct_matching_mat(post_refine=True)
+    wgrap._solve_assignment_and_update(rows, rows_to_revs, show=True)
     print wgrap.curr_assignment
