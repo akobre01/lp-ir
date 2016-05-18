@@ -22,7 +22,7 @@ class WGRAP(object):
                                          np.size(self.pap_mat, axis=0)))
 
     def group_score(self, revs, pap):
-        if not revs:
+        if not any(revs):
             return 0.0
         group_max = np.amax(self.rev_mat[revs], axis=0)
         return np.sum(np.minimum(group_max, self.pap_mat[pap])) / float(np.sum(self.pap_mat[pap]))
@@ -38,16 +38,21 @@ class WGRAP(object):
     def marg_gain_for_rev_pap(self, rev, paper):
         g1 = self.curr_rev_group(paper)
         assert rev not in set(g1)
-        if not g1:
+        if not any(g1):
             g2 = [rev]
         else:
-            g2 = g1 + [rev]
+            g2 = []
+            g2.extend(g1)
+            g2.append(rev)
         return self.marginal_gain(g1, g2, paper)
 
     def marg_gain_for_rev(self, rev):
         mg = []
         for pap in range(np.size(self.pap_mat, axis=0)):
-            mg.append(self.marg_gain_for_rev_pap(rev, pap))
+            if self.curr_assignment[rev, pap] == 1.0:
+                mg.append(-1.0)   # should never reassign a reviewer to the same paper
+            else:
+                mg.append(self.marg_gain_for_rev_pap(rev, pap))
         return mg
 
     def curr_n_revs(self, rev):
@@ -69,7 +74,6 @@ class WGRAP(object):
         indexes = self.munkres.compute(cost_matrix)
         print cost_matrix
         for row, col in indexes:
-            print row, col
             value = rows[row][col]
             self.curr_assignment[rows_to_revs[row],col] = 1
             print '(%d, %d) -> %f' % (row, col, value)
@@ -78,17 +82,21 @@ class WGRAP(object):
 if __name__ == "__main__":
     rev_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
     pap_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
-    alpha = 1
-    beta = 1
+    alpha = 2
+    beta = 2
     rev_mat = np.load(rev_mat_file)
     pap_mat = np.load(pap_mat_file)
-    rev_mat = np.array([[0.25, 0.25, 0.5],
-                        [0.25, 0.5, 0.25],
-                        [0.5, 0.25, 0.25]])
-    pap_mat = np.array([[0.25, 0.5, 0.25],
-                        [0.5, 0.25, 0.25],
-                        [0.25, 0.25, 0.5]])
+    rev_mat = np.array([[0.15, 0.35, 0.5],
+                        [0.15, 0.5, 0.35],
+                        [0.5, 0.15, 0.35]])
+    pap_mat = np.array([[0.15, 0.5, 0.35],
+                        [0.5, 0.15, 0.35],
+                        [0.15, 0.35, 0.5]])
     wgrap = WGRAP(rev_mat, pap_mat, alpha, beta)
 
     rows, rows_to_revs = wgrap._construct_matching_mat()
     wgrap._solve_assignment_and_update(rows, rows_to_revs)
+    print wgrap.curr_assignment
+    rows, rows_to_revs = wgrap._construct_matching_mat()
+    wgrap._solve_assignment_and_update(rows, rows_to_revs)
+    print wgrap.curr_assignment
