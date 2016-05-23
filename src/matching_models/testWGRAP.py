@@ -12,7 +12,7 @@ if __name__ == "__main__":
     num_rev = np.size(rev_mat, axis=0)
     num_pap = np.size(pap_mat, axis=0)
     alpha = np.ceil(num_pap * beta / num_rev)
-    out_file = "wgrap-dbdm-%d-%d-assign" % (alpha, beta)
+    out_file = "../../data/train/kou_et_al/wgrap-dbdm-%d-%d-assign" % (alpha, beta)
 
     print "REV MAT SHAPE: %s" % str(rev_mat.shape)
     print "PAP MAT SHAPE: %s" % str(pap_mat.shape)

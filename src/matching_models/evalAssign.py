@@ -13,7 +13,7 @@ if __name__ == "__main__":
     alpha = np.ceil(num_pap * beta / num_rev)
     wgrap = WGRAP(rev_mat, pap_mat, alpha, beta)
 
-    out_file = "wgrap-dbdm-%d-%d-assign-refine-9" % (alpha, beta)
+    out_file = "../../data/train/kou_et_al/wgrap-dbdm-%d-%d-assign-refine-9" % (alpha, beta)
     assign_mat = np.load(out_file + ".npy")
     wgrap.curr_assignment = assign_mat
     print wgrap.score_assignment()
