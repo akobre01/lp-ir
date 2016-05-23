@@ -14,6 +14,7 @@ def read_pap_profile(f, n_tops, pre):
 if __name__ == "__main__":
     data_dir = "/Users/akobren/software/repos/git/lp-ir/data/kou_et_al"
     dbs = ["DataMining08", "DataMining09", "Databases08", "Databases09", "Theory08", "Theory09"]
+    # dbs = ["DataMining08", "Databases08"]
     papers = "paper-profile"
     reviewers = "reviewer-profile"
 
@@ -44,3 +45,8 @@ if __name__ == "__main__":
     np.save("kou_pap_tensor", paper_tensor)
     np.save("kou_rev_tensor", reviewer_tensor)
     np.save("kou_score_mat", score_mat)
+    # np.save("kou_pap_mat_dbdm", np.array(pap_mat))
+    # np.save("kou_rev_mat_dbdm", np.array(rev_mat))
+    # np.save("kou_pap_tensor_dbdm", paper_tensor)
+    # np.save("kou_rev_tensor_dbdm", reviewer_tensor)
+    # np.save("kou_score_mat_dbdm", score_mat)

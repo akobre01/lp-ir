@@ -1,3 +1,4 @@
+from scipy.optimize import linear_sum_assignment
 import sys
 import numpy as np
 from munkres import Munkres
@@ -71,9 +72,13 @@ class WGRAP(object):
                 n_rows = int(self.alpha - self.curr_n_revs(rev))
             else:
                 n_rows = int(np.min((self.alpha - self.curr_n_revs(rev), self.nrevs_per_round)))
+
+            if n_rows > 0:
+                rev_marg_gain = self.marg_gain_for_rev(rev)
+
             for row in range(n_rows):
                 rows_to_revs[len(rows)] = rev
-                rows.append(self.marg_gain_for_rev(rev))
+                rows.append(rev_marg_gain[:])
         return rows, rows_to_revs
 
     def refine(self, R=0.01, l=0.5, itr=0, show=False):
@@ -82,6 +87,7 @@ class WGRAP(object):
         """
         for pap in range(np.size(self.pap_mat, axis=0)):
             assigned_revs = np.nonzero(self.curr_assignment[:,pap])[0]
+            assert len(assigned_revs) > 0
             rev_scores = []
             for rev in assigned_revs:
                 assert self.curr_assignment[rev,pap] == 1.0
@@ -90,8 +96,9 @@ class WGRAP(object):
                 r_score = np.max((r_score, 1.0 / R))
                 rev_scores.append(r_score)
             rev_scores = np.array(rev_scores)
-            normed_rev_scores = (np.sum(rev_scores) - rev_scores) / np.sum(rev_scores)
-            sample = np.nonzero(np.random.multinomial(1, normed_rev_scores))[0]
+            inv_rev_scores = np.sum(rev_scores) - rev_scores
+            normed_inv_rev_scores = inv_rev_scores / np.sum(inv_rev_scores)
+            sample = np.nonzero(np.random.multinomial(1, normed_inv_rev_scores))[0]
             if show:
                 print normed_rev_scores
                 print sample
@@ -106,10 +113,12 @@ class WGRAP(object):
         if show:
             print rows
         cost_matrix = self.munkres.make_cost_matrix(rows, lambda v: max_val - v)
-        indexes = self.munkres.compute(cost_matrix)
+        #indexes = self.munkres.compute(cost_matrix)
+        row_inds, col_inds = linear_sum_assignment(np.array(cost_matrix))
         if show:
             print cost_matrix
-        for row, col in indexes:
+        # for row, col in indexes:
+        for row, col in zip(row_inds, col_inds):
             self.curr_assignment[rows_to_revs[row],col] = 1
             if show:
                 value = rows[row][col]
@@ -118,17 +127,22 @@ class WGRAP(object):
     def solve(self):
         for i in range(self.beta):
             print "ITERATION %d" % i
-            rows, rows_to_revs = wgrap._construct_matching_mat()
-            wgrap._solve_assignment_and_update(rows, rows_to_revs)
+            rows, rows_to_revs = self._construct_matching_mat()
+            print "MATRIX CONSTRUCTED"
+            self._solve_assignment_and_update(rows, rows_to_revs)
         return self.curr_assignment
 
+    def score_assignment(self):
+        total = 0.0
+        for pap in range(np.size(self.pap_mat, axis=0)):
+            assigned_revs = np.nonzero(self.curr_assignment[:,pap])[0]
+            total += self.group_score(assigned_revs, pap)
+        return total
+
+
 if __name__ == "__main__":
-    rev_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
-    pap_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat.npy"
     alpha = 2
-    beta = 2
-    rev_mat = np.load(rev_mat_file)
-    pap_mat = np.load(pap_mat_file)
+    beta = 1
     rev_mat = np.array([[0.15, 0.35, 0.5],
                         [0.15, 0.5, 0.35],
                         [0.5, 0.15, 0.35]])
