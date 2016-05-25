@@ -109,7 +109,6 @@ class SeqIncreaseMake:
         if out_file is not None:
             out_file.write("%s\n" % header)
 
-        self.curr_makespan = 0
         self.solve_with_curr_makespan()
         init_assignment = self.mkspn_and_sol[-1][1]
         prev_assignment = init_assignment
@@ -138,7 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('weight_file', type=str, help='the file from which to read the weights')
     parser.add_argument('step', type=float, help='the step value by which we increase the makespan')
     parser.add_argument('matcher', type=str, help='the matcher to use, either: "bb" or "ir"')
-
+    parser.add_argument("-i", "--init", type=float, help="the initial makespan")
 
     args = parser.parse_args()
 
@@ -157,6 +156,10 @@ if __name__ == "__main__":
     n_pap = np.size(weights, axis=1)
     step = args.step
     matcher = args.matcher
+    if args.init:
+        init_makespan = args.init
+    else:
+        init_makespan = 0.0
 
     out_dir = args.weight_file[:args.weight_file.rfind('/')]
     stats_file_name = "%s-%s-seqmkspn-%s-%s.stats" % (args.matcher, weights_name, args.rev_max, args.pap_revs)
@@ -166,11 +169,12 @@ if __name__ == "__main__":
     max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher, args.rev_max, args.pap_revs)
 
 
-    mn = 0
+    mn = init_makespan
     mx = n_pap * pap_revs
     mkspns = np.linspace(mn, mx, mx / step + 1)
 
     # Run increasing makespans and write to stats files
+    print init_makespan
     sim = SeqIncreaseMake(rev_max, pap_revs, weights, mkspns, matcher)
     f = open(full_stats_file, 'w')
     sim.run_exp(f, full_assignment_file)

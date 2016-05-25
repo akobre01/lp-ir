@@ -121,7 +121,7 @@ class MakespanMatcher(object):
     # solve optimization with whatever the current makespan is
     def solve_with_current_makespan(self):
         self.m.optimize()
-        if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
+        if self.m.status == GRB.OPTIMAL:
             self.solution = self.sol_as_mat()
         return self.solution
 

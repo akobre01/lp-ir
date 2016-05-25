@@ -150,7 +150,7 @@ class IRDAMakespanMatcher(object):
     # solve optimization with whatever the current makespan is
     def solve_with_current_makespan(self, log_file=None):
         self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1, log_file)
-        if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
+        if self.m.status == GRB.OPTIMAL:
             self.solution = self.sol_as_mat()
         return self.solution
 
@@ -200,6 +200,9 @@ class IRDAMakespanMatcher(object):
             integral_assignments = np.ones((self.n_rev, self.n_pap)) * -1
 
         self.m.optimize()
+
+        if self.m.status == GRB.INFEASIBLE:
+            return
 
         if self.integral_sol_found():
             if log_file:
