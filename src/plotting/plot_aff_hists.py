@@ -29,19 +29,19 @@ if __name__ == "__main__":
         assignment_tensor = np.tile(assignments[:,:,np.newaxis], (1,1,n_tops))
         assigned_reviewers = weights * assignment_tensor
 
-        # create a paper x topic matrix of the best scores per reviewer
-        group_max_score = np.amax(assignment_tensor, axis=0)
-        group_eff_score = np.minimum(group_max_score, paper_tensor[0,:,:])
+        # compute the sum per paper per topic of the assignment
+        sum_score = np.sum(assigned_reviewers, axis=0)
+#        relative_score = sum_score / paper_tensor[0,:,:]
+        affinities = sum_score.reshape(-1)
 
-        print group_eff_score
-        print group_eff_score.shape
-        print paper_tensor[0,:,:]
-        print paper_tensor[0,:,:].shape
+        # create a paper x topic matrix of the best scores per reviewer
+        # group_max_score = np.amax(assignment_tensor, axis=0)
+        # group_eff_score = np.minimum(group_max_score, paper_tensor[0,:,:])
 
         # get max score per paper
-        fractional_group_score = group_eff_score / paper_tensor[0,:,:]
+        # fractional_group_score = group_eff_score / paper_tensor[0,:,:]
 
-        affinities = fractional_group_score.reshape(-1)
+        # affinities = fractional_group_score.reshape(-1)
 
         # what you want to do here is to figure out the score per topic per paper
         # but you want that score as a fraction of the max paper score
