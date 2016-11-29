@@ -6,26 +6,44 @@ import uuid
 from gurobipy import *
 
 class MakespanMatcher(object):
-    """makespan paper matching; tries to maximize the minimum sum of affinities for any paper
-    This uses branch and bound.
-    Attributes:
-      n_Rev - the number of reviewers
-      n_Pap - the number of papers
-      alpha - the maximum number of papers any reviewer can be assigned
-      beta - the number of reviews required per paper
-      weights - the compatibility between each reviewer and each paper.
-                This should be a numpy matrix of dimension  n_rev x n_pap.
+    """A Makespan paper matcher.
+
+    A paper matcher that tries to maximize the minimum among all paper
+    assignment scores (a paper assignment score is the sum of affinities for
+    all reviewers assigned to that paper). "Makespan" refers to the constraint
+    on a paper that constraints its assignment score to be greater than T. The
+    makespan formulation of paper matching is NP-Hard; we rely on the solver
+    (Gurobi) to do its best to solve the problem for us. In other matching
+    models, we will guarantee approximate solutions. Gurobi uses branch and
+    bound to solve the ILP (I think???).
     """
 
-    def __init__(self, alpha, beta, weights, makespan=0):
+    # TODO(AK): We should add reviewer lower bounds to this.
+    def __init__(self, alphas, betas, weights, makespan=0):
+        """Initialize a makespan matcher
+
+        Args:
+            alphas - a list of integers specifying the maximum number of papers
+                  for each reviewer.
+            betas - a list of integers specifying the number of reviews per
+                 paper.
+            weights - the affinity matrix (np.array) of papers to reviewers.
+                   Rows correspond to reviewers and columns correspond to
+                   papers.
+            makespan - optional initial makespan value.
+
+        Returns:
+            initialized makespan matcher.
+        """
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
-        self.alpha = alpha
-        self.beta = beta
+        self.alphas = alphas
+        self.betas = betas
         self.weights = weights
         self.id = uuid.uuid4()
-        self.m = Model(str(self.id) + ": iterative b-matching")
-        self.makespan = makespan                    # the minimum allowable sum of affinity for any paper
+        self.m = Model("%s: makespan matcher" % str(self.id))
+        self.makespan = makespan     # the minimum allowable paper score.
+        # TODO(AK): can we make a makespan constraint per paper?
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
@@ -40,43 +58,69 @@ class MakespanMatcher(object):
         for i in range(self.n_rev):
             self.lp_vars.append([])
             for j in range(self.n_pap):
-                self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY, name=self.var_name(i,j)))
-
+                self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
+                                                     name=self.var_name(i,j)))
         self.m.update()
 
-        # set the objective (this could be sped up if need be by incorporating it into the previous loop)
+        # Set the objective.
         obj = LinExpr()
         for i in range(self.n_rev):
             for j in range(self.n_pap):
                 obj += self.weights[i][j] * self.lp_vars[i][j]
         self.m.setObjective(obj, GRB.MAXIMIZE)
 
-        # reviewer constraints
-        for r in range(self.n_rev):
+        # Reviewer constraints.
+        for r, alpha in enumerate(self.alphas):
             self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
 
-        # paper constraints
-        for p in range(self.n_pap):
-            self.m.addConstr(sum([ self.lp_vars[i][p] for i in range(self.n_rev) ]) == self.beta, "p" + str(p))
+        # Paper constraints.
+        for p, beta in enumerate(self.betas):
+            self.m.addConstr(sum([self.lp_vars[i][p]
+                                  for i in range(self.n_rev)]) == beta,
+                             "p" + str(p))
 
-        # (paper) makespan constraints
+        # Makespan constraints.
         for p in range(self.n_pap):
-            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= self.makespan, self.ms_constr_prefix  + str(p))
-
+            self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]
+                                  for i in range(self.n_rev)]) >= self.makespan,
+                             self.ms_constr_prefix  + str(p))
         self.m.update()
 
     def change_makespan(self, new_makespan):
+        """Change the current makespan to a new_makespan value.
+
+        Args:
+            new_makespan - the new makespan constraint.
+
+        Returns:
+            Nothing.
+        """
         for c in self.m.getConstrs():
             if c.getAttr("ConstrName").startswith(self.ms_constr_prefix):
                 self.m.remove(c)
                 self.m.update()
 
         for p in range(self.n_pap):
-            self.m.addConstr(sum([ self.lp_vars[i][p] * self.weights[i][p] for i in range(self.n_rev) ]) >= new_makespan, self.ms_constr_prefix + str(p))
+            self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]
+                                  for i in range(self.n_rev) ]) >= new_makespan,
+                             self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
         self.m.update()
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10, log_file=None):
+        """Use a binary search to find a feasible makespan.
+
+        Try to solve the ILP with the current setting of the makespan. If that
+        doesn't work, then decrease the makespan halfway to the maximum feasible
+        makespan so far (as in a normal binary search). Repeat for 10
+        iterations and return the this object (which stores the best makespan).
+
+        Args:
+            mn - the minimum feasible makespan so far (optional).
+            mx - the maximum feasible makespan so far (optional).
+            itr - the maximum number of iterations before we give up (optional).
+            log_file - a string path to the log file (optional).
+        """
         if mx == -1:
             mx = self.alpha
         if itr <= 0 or mn >= mx:
@@ -88,38 +132,68 @@ class MakespanMatcher(object):
         self.change_makespan(target)
 
         if log_file:
-            logging.info("\tATTEMPTING TO SOLVE WITH MAKESPAN: " + str(self.makespan))
+            logging.info(
+                "\tATTEMPTING TO SOLVE WITH MAKESPAN: %f" % self.makespan)
 
         self.m.optimize()
 
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
             if log_file:
-                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
+                logging.info("\tSTATUS %s; SEARCHING BETWEEN: %s AND %s" % (
+                    str(self.m.status), str(target), str(mx)))
             return self.find_makespan_bin(target, mx, itr -1, log_file)
         else:
             if log_file:
-                logging.info("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
+                logging.info("\tSTATUS %s; SEARCHING BETWEEN: %s AND %s" % (
+                    str(self.m.status), str(mn), str(target)))
             self.change_makespan(prv)
             return self.find_makespan_bin(mn, target, itr - 1, log_file)
 
-
-    def var_name(self,i,j):
+    def var_name(self, i, j):
+        """The name of the variable corresponding to reviewer i and paper j."""
         return "x_" + str(i) + "," + str(j)
 
     def indices_of_var(self, v):
+        """Get the indices associated with a particular var_name (above)."""
         name = v.varName
         indices = name[2:].split(',')
         i, j = int(indices[0]), int(indices[1])
-        return i,j
+        return i, j
 
-    def sol_dict(self):
-        _sol = {}
-        for v in self.m.getVars():
-            _sol[v.varName] = v.x
-        return _sol
+    def sol_as_dict(self):
+        """Return the solution to the optimization as a dictionary.
 
-    # solve optimization with whatever the current makespan is
+        If the matching has not be solved optimally or suboptimally, then raise
+        an exception.
+
+        Args:
+            None.
+
+        Returns:
+            A dictionary from var_name to value (either 0 or 1)
+        """
+        if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
+            _sol = {}
+            for v in self.m.getVars():
+                _sol[v.varName] = v.x
+            return _sol
+        else:
+            raise Exception(
+                'You must have solved the model optimally or suboptimally '
+                'before calling this function.')
+
     def solve_with_current_makespan(self):
+        """Solve the ILP with the current makespan.
+
+        If we were not able to solve the ILP optimally or suboptimally, then
+        raise an error.  If we are able to solve the ILP, save the solution.
+
+        Args:
+            None.
+
+        Returns:
+            An np array corresponding to the solution.
+        """
         self.m.optimize()
         if self.m.status == GRB.OPTIMAL:
             self.solution = self.sol_as_mat()
@@ -129,15 +203,30 @@ class MakespanMatcher(object):
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
             solution = np.zeros((self.n_rev, self.n_pap))
             for v in self.m.getVars():
-                i,j = self.indices_of_var(v)
-                solution[i,j] = v.x
+                i, j = self.indices_of_var(v)
+                solution[i, j] = v.x
             self.solution = solution
             return solution
         else:
-            raise Exception('You must have solved the model optimally or suboptimally before calling this function.')
+            raise Exception(
+                'You must have solved the model optimally or suboptimally '
+                'before calling this function.')
 
-    # find an appropriate makespan using binary search and solve
     def solve(self, mn=0, mx=-1, itr=10, log_file=None):
+        """Find a makespan and solve the ILP.
+
+        Run a binary search to find an appropriate makespan and then solve the
+        ILP. If solved optimally or suboptimally then save the solution.
+
+        Args:
+            mn - the minimum feasible makespan (optional).
+            mx - the maximum possible makespan( optional).
+            itr - the number of iterations of binary search for the makespan.
+            log_file - the string path to the log file.
+
+        Returns:
+            The solution as a matrix.
+        """
         if mx <= 0:
             mx = self.alpha * np.max(self.weights)
 
@@ -148,28 +237,30 @@ class MakespanMatcher(object):
         end_opt = time.time()
         if log_file:
             logging.info("[SOLVER TIME]: %s" % (str(end_opt - begin_opt)))
-
-        sol = {}
-        for v in self.m.getVars():
-            sol[v.varName] = v.x
+        return self.sol_as_mat()
 
     def status(self):
+        """Return the status code of the solver."""
         return self.m.status
 
     def turn_on_verbosity(self):
+        """Turn on vurbosity for debugging."""
         self.m.setParam('OutputFlag', 1)
 
     def objective_val(self):
+        """Get the objective value of a solved lp."""
         return self.m.ObjVal
 
 if __name__ == "__main__":
-    alpha = 3
-    beta = 3
-    weights = np.genfromtxt('../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
+    weights = np.genfromtxt(
+        '../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
     init_makespan = 1.5
 
-    x = MakespanMatcher(alpha, beta, weights, init_makespan)
+    alphas = [3] * np.size(weights, axis=0)
+    betas = [3] * np.size(weights, axis=1)
+
+    x = MakespanMatcher(alphas, betas, weights, init_makespan)
     s = time.time()
     x.solve_with_current_makespan()
-    print (time.time() - s)
-    print "[done.]"
+    print(time.time() - s)
+    print("[done.]")
