@@ -5,6 +5,7 @@ import uuid
 
 from gurobipy import *
 
+
 class MakespanMatcher(object):
     """A Makespan paper matcher.
 
@@ -252,14 +253,14 @@ class MakespanMatcher(object):
         return self.m.ObjVal
 
 if __name__ == "__main__":
-    weights = np.genfromtxt(
+    ws = np.genfromtxt(
         '../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
     init_makespan = 1.5
 
-    alphas = [3] * np.size(weights, axis=0)
-    betas = [3] * np.size(weights, axis=1)
+    a = [3] * np.size(ws, axis=0)
+    b = [3] * np.size(ws, axis=1)
 
-    x = MakespanMatcher(alphas, betas, weights, init_makespan)
+    x = MakespanMatcher(a, b, ws, init_makespan)
     s = time.time()
     x.solve_with_current_makespan()
     print(time.time() - s)
