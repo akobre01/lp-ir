@@ -49,7 +49,7 @@ class MakespanMatcher(object):
 
         self.m.setParam('OutputFlag', 0)
         self.m.setParam('MIPGap', 0.02)
-        self.m.setParam('IterationLimit', 1000000)
+        self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
         self.user_ms_constr_prefix = "ums"
@@ -60,7 +60,7 @@ class MakespanMatcher(object):
             self.lp_vars.append([])
             for j in range(self.n_pap):
                 self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
-                                                     name=self.var_name(i,j)))
+                                                     name=self.var_name(i, j)))
         self.m.update()
 
         # Set the objective.
