@@ -42,8 +42,7 @@ if __name__ == "__main__":
 
     weights = np.load(args.weights)
 
-    plt.figure(1)
-    plt.subplot(111)
+    fig, ax = plt.subplots(1, 1)
     max_score = args.max_score
     x_vals = np.linspace(0, max_score, num=100)
     for model, assignment_f in model_to_assignment.items():
@@ -54,10 +53,31 @@ if __name__ == "__main__":
         for score_threshold in x_vals:
             survivors.append(len([x for x in scores if x >= score_threshold]) /
                              np.size(scores))
-        plt.plot(x_vals, survivors, label=model)
-    plt.ylabel('Fraction Survivors')
-    plt.xlabel('Paper Assignment Score')
-    plt.title('Survival')
-    plt.legend(loc='upper right')
-    plt.xlim(0, max_score)
-    plt.savefig('%s/survival.png' % args.input)
+        ax.plot(x_vals, survivors, label=model)
+    ax.set_ylabel('Fraction Survivors')
+    ax.set_xlabel('Paper Assignment Score')
+    ax.set_title('Survival')
+    leg = ax.legend(loc='upper right', frameon=False)
+    ax.set_xlim(0, max_score)
+    ax.set_ylim(0, 1.2)
+
+    # Change borders, tick colors, etc.
+    border_color = 'lightgrey'
+    label_color = 'k'
+    ax.spines['bottom'].set_color(border_color)
+    ax.spines['left'].set_color(border_color)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.tick_params(axis='x', which='both', bottom='on', top='off',
+                   color=border_color)
+    ax.tick_params(axis='y', which='both', left='on', right='off',
+                   color=border_color)
+    ax.xaxis.label.set_color(label_color)
+    ax.yaxis.label.set_color(label_color)
+    for l in ax.xaxis.get_ticklabels():
+        l.set_color(label_color)
+    for l in ax.yaxis.get_ticklabels():
+        l.set_color(label_color)
+    for l in leg.get_texts():
+        l.set_color(label_color)
+    fig.savefig('%s/survival.png' % args.input)
