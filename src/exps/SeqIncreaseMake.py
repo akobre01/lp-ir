@@ -4,9 +4,11 @@ import time
 
 from gurobipy import *
 sys.path.insert(0,'..')
+
 from matching_models.MakespanMatcher import MakespanMatcher
 from matching_models.IRMakespanMatcher import IRMakespanMatcher
 from matching_models.IRDAMakespanMatcher import IRDAMakespanMatcher
+
 
 class SeqIncreaseMake:
     """A class (but should be refactored, this shouldn't be a class...) that
@@ -75,19 +77,23 @@ class SeqIncreaseMake:
         return (status, problem)
 
     def largest_makespan(self):
+        """Return the largest successful makespan from a set of solutions."""
         return sorted([m_and_sol
                        for m_and_sol in self.mkspn_and_sol
                        if m_and_sol[1] is not None],
                       key=lambda m_and_sol: -m_and_sol[0])[0][0]
 
     def num_diffs(self, a1, a2):
+        """Returns the number of different assignments between a1 and a2."""
         return float(np.sum(np.abs(a1 - a2)))   # this assumes that the
 
     def survival(self, assignments):
+        """Compute the area under the survival curve for the assignment."""
+        assert (all([b == self.beta[0] for b in self.beta]))
+        assert np.all(self.weights <= 1.0)
         scores = np.sum(assignments * self.weights, axis=0)
-        max_score = np.max(scores)
         survival_score = 0.0
-        for score_threshold in np.linspace(0, max_score, max_score / 0.1 + 1):
+        for score_threshold in np.linspace(0, self.beta[0], num=100):
             survival_score += len([x for x in scores if x >= score_threshold])
         return float(survival_score) / float(self.n_pap)
 
@@ -126,6 +132,7 @@ class SeqIncreaseMake:
             mean_pap = "%.2f" % (self.mean_pap(assignments))
             std_pap = "%.2f" % (self.std_pap(assignments))
             survival_score = "%.2f" % (self.survival(assignments))
+            obj_val = "%.2f" % (np.sum(self.weights * assignments))
         else:
             overall_percent_change = "----"
             percent_reviews_change = "----"
@@ -135,6 +142,7 @@ class SeqIncreaseMake:
             mean_pap = "----"
             std_pap = "____"
             survival_score = "----"
+            obj_val = "----"
         return "\t".join([str(x) for x in ["%.2f" % self.curr_makespan,
                                            self.n_pap,
                                            self.n_rev,
@@ -147,6 +155,7 @@ class SeqIncreaseMake:
                                            overall_percent_change,
                                            percent_reviews_change,
                                            percent_reviews_change_from_init,
+                                           obj_val,
                                            survival_score,
                                            "%.2fs" % float(t)]])
 
@@ -162,8 +171,8 @@ class SeqIncreaseMake:
         """
         print('ASSIGNMENT FILE: %s' % out_file_assign)
         header = "\t".join(["#MKSPN", "#PAP", "#REV", "ALPHA", "BETA", "MAX",
-                            "MIN", "MEAN", "STD", "%X", "%XR", "%XR_0", "SUR",
-                            "TIME"])
+                            "MIN", "MEAN", "STD", "%X", "%XR", "%XR_0", "OBJ",
+                            "SUR", "TIME"])
         print(header)
         if out_file is not None:
             out_file.write("%s\n" % header)
