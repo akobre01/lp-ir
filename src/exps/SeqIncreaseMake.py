@@ -229,29 +229,26 @@ if __name__ == "__main__":
     else:
         init_makespan = 0.0
 
-    out_dir = args.output
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-    stats_file_name = "%s-%s-seqmkspn-%s-%s.stats" % (args.matcher,
-                                                      weights_name, rev_max,
-                                                      args.pap_revs)
-    assignment_file_name = "%s-%s-seqmkspn-%s-%s.assignment" % (args.matcher,
-                                                                weights_name,
-                                                                rev_max,
-                                                                args.pap_revs)
-    full_stats_file = "%s/%s" % (out_dir, stats_file_name)
-    full_assignment_file = "%s/%s" % (out_dir, assignment_file_name)
-    max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s" % (args.matcher,
-                                                           rev_max,
-                                                           args.pap_revs)
-
     mn = init_makespan
     mx = n_pap * pap_revs
     if args.single:
         mkspns = [mn]
     else:
         mkspns = np.linspace(mn, mx, mx / step + 1)
-
+    matcher_name = 'baseline' if len(mkspns) == 1 and mkspns[0] == 0.0 \
+        else args.matcher
+    out_dir = args.output
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    stats_file_name = "%s-%s-seqmkspn-%s-%s-%f-%f.stats" % (matcher_name,
+                                                            weights_name,
+                                                            rev_max,
+                                                            args.pap_revs,
+                                                            mn, mx)
+    assignment_file_name = "assignment-%s-%s-seqmkspn-%s-%s-%s-%s" % (
+        matcher_name, weights_name, rev_max, args.pap_revs, mn, mx)
+    full_stats_file = "%s/%s" % (out_dir, stats_file_name)
+    full_assignment_file = "%s/%s" % (out_dir, assignment_file_name)
     # Run increasing makespans and write to stats files
     sim = SeqIncreaseMake([rev_max] * n_rev, [pap_revs] * n_pap, weights,
                           mkspns, matcher)
@@ -260,6 +257,8 @@ if __name__ == "__main__":
     f.close()
 
     # Write the largest threshold found to file
+    max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s-%s-%s" % (
+        matcher_name, rev_max, args.pap_revs, mn, mx)
     f = open('%s/%s' % (out_dir, max_threshold_file), 'w')
     f.write("%f\n" % sim.largest_makespan())
     f.close()
