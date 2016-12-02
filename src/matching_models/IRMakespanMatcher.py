@@ -3,7 +3,7 @@ import numpy as np
 import time
 import uuid
 
-from MakespanMatcher import MakespanMatcher
+from .MakespanMatcher import MakespanMatcher
 from gurobipy import *
 
 
@@ -216,7 +216,6 @@ class IRMakespanMatcher(MakespanMatcher):
                             self.m.remove(c)
                             return self.round_fractional(integral_assignments,
                                                          log_file, count + 1)
-
 
     def count_tight_rev_constr(self, sol):
         """Return the number of tight reviewer load constraints."""

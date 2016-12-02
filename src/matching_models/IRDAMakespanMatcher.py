@@ -97,7 +97,7 @@ class IRDAMakespanMatcher(object):
         if log_file:
             logging.info("[MAKESPAN ATTEMPT]: %f" % self.makespan)
         else:
-            print "[MAKESPAN ATTEMPT]: %f" % self.makespan
+            print("[MAKESPAN ATTEMPT]: %f" % self.makespan)
 
         self.m.optimize()
 
@@ -106,14 +106,14 @@ class IRDAMakespanMatcher(object):
                 logging.info("[STATUS]: %d" % self.m.status)
                 logging.info("SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
             else:
-                print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx)
+                print("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(target) + " AND " + str(mx))
             return self.find_makespan_bin(target, mx, itr -1, log_file)
         else:
             if log_file:
                 logging.info("[STATUS]: %d" % self.m.status)
                 logging.info("SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
             else:
-                print "\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target)
+                print("\tSTATUS " + str(self.m.status) + "; SEARCHING BETWEEN: " + str(mn) + " AND " + str(target))
             self.change_makespan(prv)
             return self.find_makespan_bin(mn, target, itr - 1, log_file)
 
@@ -310,5 +310,5 @@ if __name__ == "__main__":
     x = IRDAMakespanMatcher(alpha, beta, weights, init_makespan)
     s = time.time()
     x.solve_with_current_makespan()
-    print (time.time() - s)
-    print "[done.]"
+    print(time.time() - s)
+    print("[done.]")
