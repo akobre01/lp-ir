@@ -3,11 +3,10 @@ import numpy as np
 import time
 
 from gurobipy import *
-sys.path.insert(0,'..')
 
-from matching_models.MakespanMatcher import MakespanMatcher
-from matching_models.IRMakespanMatcher import IRMakespanMatcher
-from matching_models.IRDAMakespanMatcher import IRDAMakespanMatcher
+from ..matching_models.MakespanMatcher import MakespanMatcher
+from ..matching_models.IRMakespanMatcher import IRMakespanMatcher
+from ..matching_models.IRDAMakespanMatcher import IRDAMakespanMatcher
 
 
 class SeqIncreaseMake:
@@ -212,6 +211,8 @@ if __name__ == "__main__":
     parser.add_argument('output', type=str,
                         help='the directory in which to save the results.')
     parser.add_argument("-i", "--init", type=float, help="the initial makespan")
+    parser.add_argument("-s", "--single", action='store_true',
+                        help="if specified, only run this makespan.")
     args = parser.parse_args()
 
     pap_revs = args.pap_revs
@@ -246,10 +247,12 @@ if __name__ == "__main__":
 
     mn = init_makespan
     mx = n_pap * pap_revs
-    mkspns = np.linspace(mn, mx, mx / step + 1)
+    if args.single:
+        mkspns = [mn]
+    else:
+        mkspns = np.linspace(mn, mx, mx / step + 1)
 
     # Run increasing makespans and write to stats files
-    print(init_makespan)
     sim = SeqIncreaseMake([rev_max] * n_rev, [pap_revs] * n_pap, weights,
                           mkspns, matcher)
     f = open(full_stats_file, 'w')
