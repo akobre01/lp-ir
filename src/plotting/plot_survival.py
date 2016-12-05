@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 from matplotlib import pyplot as plt
-
+from .plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
 
 def read_files_with_prefix(d, pre):
     """Read the files in directory d with prefix pre."""
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         for score_threshold in x_vals:
             survivors.append(len([x for x in scores if x >= score_threshold]) /
                              np.size(scores))
-        ax.plot(x_vals, survivors, label=model)
+        ax.plot(x_vals, survivors, label=model, color=MODEL_TO_COLOR[model])
     ax.set_ylabel('Fraction Survivors')
     ax.set_xlabel('Paper Assignment Score')
     ax.set_title('Survival')
@@ -62,22 +62,20 @@ if __name__ == "__main__":
     ax.set_ylim(0, 1.2)
 
     # Change borders, tick colors, etc.
-    border_color = 'lightgrey'
-    label_color = 'k'
-    ax.spines['bottom'].set_color(border_color)
-    ax.spines['left'].set_color(border_color)
+    ax.spines['bottom'].set_color(BORDER_COLOR)
+    ax.spines['left'].set_color(BORDER_COLOR)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.tick_params(axis='x', which='both', bottom='on', top='off',
-                   color=border_color)
+                   color=BORDER_COLOR)
     ax.tick_params(axis='y', which='both', left='on', right='off',
-                   color=border_color)
-    ax.xaxis.label.set_color(label_color)
-    ax.yaxis.label.set_color(label_color)
+                   color=BORDER_COLOR)
+    ax.xaxis.label.set_color(LABEL_COLOR)
+    ax.yaxis.label.set_color(LABEL_COLOR)
     for l in ax.xaxis.get_ticklabels():
-        l.set_color(label_color)
+        l.set_color(LABEL_COLOR)
     for l in ax.yaxis.get_ticklabels():
-        l.set_color(label_color)
+        l.set_color(LABEL_COLOR)
     for l in leg.get_texts():
-        l.set_color(label_color)
+        l.set_color(LABEL_COLOR)
     fig.savefig('%s/survival.png' % args.input)
