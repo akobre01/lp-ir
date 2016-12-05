@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import os
 
+
 def read_files_with_prefix(d, pre):
     """Read the files in directory d with prefix pre."""
     return [f for f in os.listdir(d) if f.startswith(pre)]
@@ -101,18 +102,18 @@ if __name__ == "__main__":
         for row in rows:
             row_as_strs = [
                 row[0],
-                '\\textbf{%.2f}' % row[1] if row[1] == best_mean else
-                '%.2f' % row[1],
-                '\\textbf{%.2f}' % row[2] if row[2] == best_min else
-                '%.2f' % row[2],
-                '\\textbf{%.2f}' % row[3] if row[3] == best_max else
-                '%.2f' % row[3],
-                '\\textbf{%.2f}' % row[4] if row[4] == best_std else
-                '%.2f' % row[4],
-                '\\textbf{%.2f}' % row[5] if row[5] == best_auc else
-                '%.2f' % row[5],
-                '\\textbf{%.2f}' % row[6] if row[6] == best_time else
-                '%.2f' % row[6],
+                '\\textbf{%.2f}' % row[1] if round(row[1], 2) == round(
+                    best_mean, 2) else '%.2f' % row[1],
+                '\\textbf{%.2f}' % row[2] if round(row[2], 2) == round(
+                    best_min, 2) else '%.2f' % row[2],
+                '\\textbf{%.2f}' % row[3] if round(row[3], 2) == round(
+                    best_max, 2) else '%.2f' % row[3],
+                '\\textbf{%.2f}' % row[4] if round(row[4], 2) == round(
+                    best_std, 2) else '%.2f' % row[4],
+                '\\textbf{%.2f}' % row[5] if round(row[5], 2) == round(
+                    best_auc, 2) else '%.2f' % row[5],
+                '\\textbf{%.2f}' % row[6] if round(row[6], 2) == round(
+                    best_time, 2) else '%.2f' % row[6],
             ]
             f.write(' & '.join(row_as_strs))
             f.write('\\\\\n')

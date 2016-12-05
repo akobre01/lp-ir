@@ -240,7 +240,7 @@ if __name__ == "__main__":
     out_dir = args.output
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    stats_file_name = "%s-%s-seqmkspn-%s-%s-%f-%f.stats" % (matcher_name,
+    stats_file_name = "stats-%s-%s-seqmkspn-%s-%s-%f-%f" % (matcher_name,
                                                             weights_name,
                                                             rev_max,
                                                             args.pap_revs,
