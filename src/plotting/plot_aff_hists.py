@@ -55,7 +55,9 @@ if __name__ == "__main__":
         assert np.all(weights <= 1.0)
         assignments = np.load('%s/%s' % (args.input, assignment_f))
         scores = np.sum(assignments * weights, axis=0)
-        ax.hist(scores, bins=bins, color=MODEL_TO_COLOR[model], edgecolor=None)
+        _, _, patches = ax.hist(scores, bins=bins, color=MODEL_TO_COLOR[model])
+        for patch in patches:
+            patch.set_edgecolor('white')
         ax.set_ylabel('# of Assignments')
         ax.set_xlabel('Paper Assignment Score')
         ax.set_title(model)
