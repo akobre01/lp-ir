@@ -84,7 +84,7 @@ class TotAffMatcher(object):
             logging.info("\t(REVIEWER, PAPER) " + str((i,j)) + " CHANGED FROM: " + str(prevVal) + " -> " + str(abs(prevVal - 1)))
         self.m.addConstr(self.lp_vars[i][j] == abs(prevVal - 1), "h" + str(i) + ", " + str(j))
 
-    def add_hard_consts(self, constrs log_file=None):
+    def add_hard_consts(self, constrs, log_file=None):
         """Add a list of hard constraints to the model.
 
         Add a list of hard constraints in batch to the model.
@@ -110,6 +110,12 @@ class TotAffMatcher(object):
     def solve(self, log_file=None):
         begin_opt = time.time()
         self.m.optimize()
+        if self.m.status != GRB.OPTIMAL:
+            raise Exception('This instance of matching could not be solved '
+                                'optimally.  Please ensure that the input '
+                                'constraints produce a feasible matching '
+                                'instance.')
+
         end_opt = time.time()
         if log_file:
             logging.info("[SOLVER TIME]: %s" % (str(end_opt - begin_opt)))
