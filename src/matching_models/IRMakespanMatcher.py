@@ -26,9 +26,9 @@ class IRMakespanMatcher(MakespanMatcher):
         """Initialize a makespan matcher
 
         Args:
-            alphas - a list of integers specifying the maximum number of papers
+            loads - a list of integers specifying the maximum number of papers
                   for each reviewer.
-            betas - a list of integers specifying the number of reviews per
+            coverages - a list of integers specifying the number of reviews per
                  paper.
             weights - the affinity matrix (np.array) of papers to reviewers.
                    Rows correspond to reviewers and columns correspond to

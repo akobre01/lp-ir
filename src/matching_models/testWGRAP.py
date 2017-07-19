@@ -6,7 +6,7 @@ import time
 if __name__ == "__main__":
     rev_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_rev_mat_dm08.npy"
     pap_mat_file = "/Users/akobren/software/repos/git/lp-ir/data/train/kou_et_al/kou_pap_mat_dm08.npy"
-    beta = 3
+    beta = 5
     rev_mat = np.load(rev_mat_file)
     pap_mat = np.load(pap_mat_file)
     num_rev = np.size(rev_mat, axis=0)
