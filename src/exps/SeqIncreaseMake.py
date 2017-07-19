@@ -200,8 +200,8 @@ class SeqIncreaseMake:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Arguments for creating weight files.')
-    # parser.add_argument('rev_max', type=int, help='max # of papers per rev')
-    parser.add_argument('pap_revs', type=int, help='# of reviewers per paper')
+    # parser.add_argument('max_load', type=int, help='max # of papers per rev')
+    parser.add_argument('coverage', type=int, help='# of reviewers per paper')
     parser.add_argument('weight_file', type=str,
                         help='the file from which to read the weights')
     parser.add_argument('step', type=float,
@@ -215,14 +215,14 @@ if __name__ == "__main__":
                         help="if specified, only run this makespan.")
     args = parser.parse_args()
 
-    pap_revs = args.pap_revs
+    coverage = args.coverage
     weights = np.load(args.weight_file)
     weights_name = args.weight_file[
                    args.weight_file.rfind('/') + 1:args.weight_file.rfind('.')]
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
     step = args.step
-    rev_max = np.ceil(n_pap * float(pap_revs) / n_rev)
+    rev_max = np.ceil(n_pap * float(coverage) / n_rev)
     matcher = args.matcher
     if args.init:
         init_makespan = args.init
@@ -230,7 +230,7 @@ if __name__ == "__main__":
         init_makespan = 0.0
 
     mn = init_makespan
-    mx = n_pap * pap_revs
+    mx = n_pap * coverage
     if args.single:
         mkspns = [mn]
     else:
@@ -243,14 +243,14 @@ if __name__ == "__main__":
     stats_file_name = "stats-%s-%s-seqmkspn-%s-%s-%f-%f" % (matcher_name,
                                                             weights_name,
                                                             rev_max,
-                                                            args.pap_revs,
+                                                            args.coverage,
                                                             mn, mx)
     assignment_file_name = "assignment-%s-%s-seqmkspn-%s-%s-%s-%s" % (
-        matcher_name, weights_name, rev_max, args.pap_revs, mn, mx)
+        matcher_name, weights_name, rev_max, args.coverage, mn, mx)
     full_stats_file = "%s/%s" % (out_dir, stats_file_name)
     full_assignment_file = "%s/%s" % (out_dir, assignment_file_name)
     # Run increasing makespans and write to stats files
-    sim = SeqIncreaseMake([rev_max] * n_rev, [pap_revs] * n_pap, weights,
+    sim = SeqIncreaseMake([rev_max] * n_rev, [coverage] * n_pap, weights,
                           mkspns, matcher)
     f = open(full_stats_file, 'w')
     sim.run_exp(out_file=f, out_file_assign=full_assignment_file)
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     # Write the largest threshold found to file
     max_threshold_file = "mxthresh-%s-alpha-%s-beta-%s-%s-%s" % (
-        matcher_name, rev_max, args.pap_revs, mn, mx)
+        matcher_name, rev_max, args.coverage, mn, mx)
     f = open('%s/%s' % (out_dir, max_threshold_file), 'w')
     f.write("%f\n" % sim.largest_makespan())
     f.close()

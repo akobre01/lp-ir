@@ -5,6 +5,7 @@ import os
 from matplotlib import pyplot as plt
 from .plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
 
+
 def read_files_with_prefix(d, pre):
     """Read the files in directory d with prefix pre."""
     return [f for f in os.listdir(d) if f.startswith(pre)]

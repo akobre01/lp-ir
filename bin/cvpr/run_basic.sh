@@ -7,9 +7,10 @@ OUTDIR="results/test-cvpr"
 MAXSCORE=3
 
 # Run the baseline, bb with makespan and ir.
-python -m src.exps.run_baseline 3 $DATASET $OUTDIR
+#python -m src.exps.run_basic 3 $DATASET $OUTDIR
 
-# Plot survival of the models.
+# Plot survival and histogram of results.
 python -m src.plotting.plot_survival -i $OUTDIR -w $DATASET -m $MAXSCORE
+python -m src.plotting.plot_aff_hists -i $OUTDIR -w $DATASET -m $MAXSCORE
 
 echo "[done.]"
