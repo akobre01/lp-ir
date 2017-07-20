@@ -52,7 +52,6 @@ class MakespanMatcher(object):
         self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
-        self.user_ms_constr_prefix = "ums"
 
         # primal variables
         self.lp_vars = []
@@ -229,7 +228,7 @@ class MakespanMatcher(object):
             The solution as a matrix.
         """
         if mx <= 0:
-            mx = self.alpha * np.max(self.weights)
+            mx = np.max(self.alphas) * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
 
