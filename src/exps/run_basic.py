@@ -22,22 +22,21 @@ if __name__ == "__main__":
                    args.weight_file.rfind('/') + 1:args.weight_file.rfind('.')]
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
-    print('Num Rev\tNum Pap\n%d\t%d' % (n_rev, n_pap))
 
     max_load = np.ceil(n_pap * float(coverage) / n_rev)
     out_dir = args.output
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    stats_file_name = "stats-basic-%s-%s-%s-0-0" % (
-        weights_name, max_load, args.cov_const)
-    assignment_file_name = "assignment-basic-%s-%s-%s-0-0" % (
-        weights_name, max_load, args.cov_const)
-    full_stats_file = "%s/%s" % (out_dir, stats_file_name)
-    full_assignment_file = "%s/%s" % (out_dir, assignment_file_name)
+
+    # Output files.
+    assignment_file = os.path.join(args.output, 'assignment')
+    time_file = os.path.join(args.output, 'time.tsv')
 
     bm = BasicMatcher([max_load] * n_rev, [coverage] * n_pap, weights)
     s = time.time()
     bm.solve()
     t = time.time() - s
-    print('TIME: %s' % t)
-    np.save(full_assignment_file, bm.sol_as_mat())
+    f = open(time_file, 'w')
+    f.write(str(t))
+    f.close()
+    np.save(assignment_file, bm.sol_as_mat())
