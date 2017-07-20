@@ -21,13 +21,22 @@ def sorted_heatmap(weights):
     col_order = np.array(sorted(row_order.T, key=lambda row: -np.sum(row))).T
     cMap = plt.get_cmap("Blues")
 
-    plt.subplot(1,1,1)
-    heatmap = plt.pcolor(col_order, cmap=cMap)
+    fig1 = plt.figure(1)
+    fig1.add_subplot(1, 1, 1)
+    heatmap = plt.pcolor(col_order[:200, :200], cmap=cMap)
     plt.colorbar(heatmap)
-    plt.title("Title")
-    plt.xlabel("Xlabel")
-    plt.ylabel("Ylabel")
-    return plt
+    plt.title("Reviewer-Paper Affinities")
+    plt.xlabel("Paper")
+    plt.ylabel("Reviewer")
+
+    fig2 = plt.figure(2)
+    fig2.add_subplot(1, 1, 1)
+    heatmap = plt.pcolor(col_order[-200:, -200:], cmap=cMap)
+    plt.colorbar(heatmap)
+    plt.title("Reviewer-Paper Affinities")
+    plt.xlabel("Paper")
+    plt.ylabel("Reviewer")
+    return fig1, fig2
 
 
 if __name__ == '__main__':
@@ -41,5 +50,6 @@ if __name__ == '__main__':
 
     weights_f = args.weights
     ws = np.load(weights_f)
-    plt = sorted_heatmap(ws[:200, :200])
-    plt.savefig(os.path.join(args.output, 'cvpr.png'))
+    f1, f2 = sorted_heatmap(ws)
+    f1.savefig(os.path.join(args.output, 'cvpr-worst.png'))
+    f2.savefig(os.path.join(args.output, 'cvpr-best.png'))
