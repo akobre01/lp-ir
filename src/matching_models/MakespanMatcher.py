@@ -149,11 +149,13 @@ class MakespanMatcher(object):
             self.change_makespan(prv)
             return self.find_makespan_bin(mn, target, itr - 1, log_file)
 
-    def var_name(self, i, j):
+    @staticmethod
+    def var_name(i, j):
         """The name of the variable corresponding to reviewer i and paper j."""
         return "x_" + str(i) + "," + str(j)
 
-    def indices_of_var(self, v):
+    @staticmethod
+    def indices_of_var(v):
         """Get the indices associated with a particular var_name (above)."""
         name = v.varName
         indices = name[2:].split(',')

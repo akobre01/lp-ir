@@ -7,6 +7,15 @@ import time
 from ..matching_models.MakespanMatcher import MakespanMatcher
 
 if __name__ == "__main__":
+    """Solve the makespan version of paper matching using gurobi's heuristics.
+    
+    If no makespan is passed in, run a binary search over possible makespan
+    values to find the best value.  If a makespan is passed in, then only run
+    using that makespan.
+    
+    This script writes the assignment constructed as well as the total time to
+    construct the assignment.
+    """
     parser = argparse.ArgumentParser(
         description='Run gurobis ILP solver on dataset.')
     parser.add_argument('cov_const', type=int, help='# of reviewers per paper')
@@ -14,6 +23,8 @@ if __name__ == "__main__":
                         help='the file from which to read the weights')
     parser.add_argument('output', type=str,
                         help='the directory in which to save the results.')
+    parser.add_argument('-m', '--makespan', type=float,
+                        help='the value of the makespan to run.')
     args = parser.parse_args()
 
     coverage = args.cov_const
@@ -34,9 +45,13 @@ if __name__ == "__main__":
 
     bb = MakespanMatcher([max_load] * n_rev, [coverage] * n_pap, weights)
     s = time.time()
-    bb.solve()
+    if args.makespan:
+        bb.change_makespan(args.makespan)
+        bb.solve_with_current_makespan()
+    else:
+        bb.solve()
     t = time.time() - s
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()
-    np.save(assignment_file, bm.sol_as_mat())
+    np.save(assignment_file, bb.sol_as_mat())
