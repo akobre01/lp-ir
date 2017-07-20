@@ -17,9 +17,9 @@ set -exu
 
 DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
-COVERAGE=3
+COVERAGE=$1
 ALG="bb"
-MS=$1
+MS=$2
 OUTDIR="results/${DATA_NAME}-cov=${COVERAGE}/${ALG}-ms=${MS}/"
 
 # Create output director
