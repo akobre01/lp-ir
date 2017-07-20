@@ -12,5 +12,5 @@ if [ ! -f $PM_ROOT/.gitignore ]; then
 fi
 
 # Setup log dir
-mkdir logs
-mkdir logs/cvpr
+mkdir -p logs
+mkdir -p logs/cvpr
