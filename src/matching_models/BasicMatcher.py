@@ -34,8 +34,6 @@ class BasicMatcher(object):
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
-        self.m.setParam('MIPGap', 0.02)
-        self.m.setParam('IterationLimit', 200000)
 
         # primal variables
         self.lp_vars = []
