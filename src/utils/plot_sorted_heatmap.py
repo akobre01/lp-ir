@@ -51,5 +51,5 @@ if __name__ == '__main__':
     weights_f = args.weights
     ws = np.load(weights_f)
     f1, f2 = sorted_heatmap(ws)
-    f1.savefig(os.path.join(args.output, 'cvpr-worst.png'))
-    f2.savefig(os.path.join(args.output, 'cvpr-best.png'))
+    f1.savefig(os.path.join(args.output, 'heatmap-worst.png'))
+    f2.savefig(os.path.join(args.output, 'heatmap-best.png'))

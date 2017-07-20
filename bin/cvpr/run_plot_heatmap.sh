@@ -2,8 +2,10 @@
 
 set -exu
 
+DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
-OUTDIR="results/heatmaps/"
+COVERAGE=3
+OUTDIR="results/${DATA_NAME}-cov=${COVERAGE}/"
 
 # Create output director
 mkdir -p $OUTDIR
