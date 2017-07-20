@@ -2,7 +2,6 @@
 
 export PM_ROOT=`pwd`
 export PM_DATA_ROOT=$PM_ROOT/data
-export PYTHONPATH=$PM_ROOT/src:$PYTHONPATH
 
 if [ ! -f $PM_ROOT/.gitignore ]; then
     echo ".gitignore" > $PM_ROOT/.gitignore

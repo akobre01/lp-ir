@@ -12,7 +12,8 @@
 #SBATCH --time=0-02:00         # Runtime in D-HH:MM
 #SBATCH --mem=4000    # Memory in MB per cpu allocated
 
-#source `pwd`/swarm/setup.sh
+source `pwd`/swarm/setup.sh
+
 set -exu
 
 DATA_NAME="cvpr17acs-0.9-pow-0.9"
