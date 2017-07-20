@@ -48,8 +48,8 @@ class MakespanMatcher(object):
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
-        self.m.setParam('MIPGap', 0.02)
-        self.m.setParam('IterationLimit', 200000)
+        self.m.setParam('MIPGap', 0.05)
+        # self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
 

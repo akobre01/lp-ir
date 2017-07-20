@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=mmbb_papermatch
-#SBATCH --output=logs/cvpr/run_basic.log
-#SBATCH -e logs/cvpr/run_basic.err
+#SBATCH --job-name=mmbb_single
+#SBATCH --output=logs/cvpr/run_mmbb_single.log
+#SBATCH -e logs/cvpr/run_mmbb_single.err
 #SBATCH --partition=defq    # Partition to submit to
 #
 #SBATCH --ntasks=1
