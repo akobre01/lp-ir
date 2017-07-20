@@ -16,10 +16,13 @@
 set -exu
 
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
-OUTDIR="results/test-cvpr"
-MAXSCORE=3
+OUTDIR="results/cvpr"
+COVERAGE=3
+
+# Create output director
+mkdir -p $OUTDIR
 
 # Run the baseline, bb with makespan and ir.
-python -m src.exps.run_basic 3 $DATASET $OUTDIR
+python -m src.exps.run_basic $COVERAGE $DATASET $OUTDIR
 
 echo "[done.]"
