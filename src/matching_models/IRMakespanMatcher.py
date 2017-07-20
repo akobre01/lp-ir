@@ -49,11 +49,8 @@ class IRMakespanMatcher(MakespanMatcher):
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
-        self.m.setParam('MIPGap', 0.02)
-        self.m.setParam('IterationLimit', 200000)
 
         self.ms_constr_prefix = "ms"
-        self.user_ms_constr_prefix = "ums"
         self.round_constr_prefix = "round"
 
         # primal variables
@@ -127,7 +124,7 @@ class IRMakespanMatcher(MakespanMatcher):
         # TODO(AK)): Does this even do anything?
         for c in self.m.getConstrs():
             if c.ConstrName.startswith(self.round_constr_prefix):
-                println("SURPRISE! REMOVING A CONSTRAINT: %s" % str(c))
+                print("SURPRISE! REMOVING A CONSTRAINT: %s" % str(c))
                 self.m.remove(c)
 
         if mx <= 0:
