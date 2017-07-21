@@ -20,7 +20,7 @@ class MakespanMatcher(object):
     """
 
     # TODO(AK): We should add reviewer lower bounds to this.
-    def __init__(self, alphas, betas, weights, makespan=0):
+    def __init__(self, alphas, betas, weights, makespan=0, gap=0.0):
         """Initialize a makespan matcher
 
         Args:
@@ -32,6 +32,7 @@ class MakespanMatcher(object):
                    Rows correspond to reviewers and columns correspond to
                    papers.
             makespan - optional initial makespan value.
+            gap - the MIP gap to set for valid solutions.
 
         Returns:
             initialized makespan matcher.
@@ -48,8 +49,7 @@ class MakespanMatcher(object):
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
-        self.m.setParam('MIPGap', 0.05)
-        # self.m.setParam('IterationLimit', 200000)
+        self.m.setParam('MIPGap', gap)
 
         self.ms_constr_prefix = "ms"
 

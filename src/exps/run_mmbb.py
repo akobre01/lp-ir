@@ -25,6 +25,8 @@ if __name__ == "__main__":
                         help='the directory in which to save the results.')
     parser.add_argument('-m', '--makespan', type=float,
                         help='the value of the makespan to run.')
+    parser.add_argument('-g', '--mipgap', type=float,
+                        help='the MIP gap to allow.')
     args = parser.parse_args()
 
     coverage = args.cov_const
