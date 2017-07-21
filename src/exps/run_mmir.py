@@ -34,7 +34,7 @@ if __name__ == "__main__":
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
 
-    max_load = np.ceil(n_pap * float(coverage) / n_rev)
+    max_load = 2 * np.ceil(n_pap * float(coverage) / n_rev)
     out_dir = args.output
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
