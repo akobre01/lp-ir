@@ -7,9 +7,11 @@ source `pwd`/blake/setup.sh
 #   2623 * 3 / 1373 ~= 5.73
 # if coverage is 5
 #   2623 * 5 / 1373 ~= 9.55
+# It is different from the other affinity matrices because it only uses
+# subject areas.
 
-DATA_NAME="cvpr17acs-0.9-pow-0.9"
-DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
+DATA_NAME="subjects-only"
+DATASET="data/cvpr/subjects-only.npy"
 
 LOAD=8
 COVERAGE=3
