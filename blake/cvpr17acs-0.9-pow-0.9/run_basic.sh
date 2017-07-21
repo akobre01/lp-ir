@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source `pwd`/swarm/setup.sh
+source `pwd`/blake/setup.sh
 
 # This dataset has 1373 reviewers and 2623 papers.
 # if coverage is 3
@@ -15,6 +15,6 @@ LOAD=8
 COVERAGE=3
 
 # Run the basic lp formulation of paper matching.
-sbatch $PM_ROOT/bin/cvpr/run_basic.sh $DATA_NAME $DATASET $LOAD $COVERAGE
+echo "$PM_ROOT/bin/cvpr/run_basic.sh $DATA_NAME $DATASET $LOAD $COVERAGE" | qsub -cwd  -j y  -o results/${DATA_NAME}/run_basic.log" -m e -M akobren@cs.umass.edu -l mem_token=18G -N run_basic -S /bin/sh
 
 exit
