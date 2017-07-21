@@ -13,8 +13,12 @@ DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
 
 LOAD=8
 COVERAGE=3
+LOGDIR=$PM_ROOT/logs/${DATA_NAME}
+LOGFILE=$LOGDIR/run_basic.log
+
+mkdir -p $LOGFILE
 
 # Run the basic lp formulation of paper matching.
-echo "$PM_ROOT/bin/cvpr/run_basic.sh $DATA_NAME $DATASET $LOAD $COVERAGE" | qsub -cwd  -j y  -o results/${DATA_NAME}/run_basic.log" -m e -M akobren@cs.umass.edu -l mem_token=18G -N run_basic -S /bin/sh
+echo "$PM_ROOT/bin/cvpr/run_basic.sh $DATA_NAME $DATASET $LOAD $COVERAGE" | qsub -cwd  -j y  -o $LOGFILE -m e -M akobren@cs.umass.edu -l mem_token=18G -N run_basic -S /bin/sh
 
 exit
