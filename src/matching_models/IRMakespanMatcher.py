@@ -128,7 +128,7 @@ class IRMakespanMatcher(MakespanMatcher):
                 self.m.remove(c)
 
         if mx <= 0:
-            mx = self.alpha * np.max(self.weights)
+            mx = np.max(self.alphas) * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
         begin_opt = time.time()
@@ -159,6 +159,7 @@ class IRMakespanMatcher(MakespanMatcher):
         self.m.optimize()
 
         if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
+            assert(False)
             return
 
         if self.integral_sol_found():
@@ -169,7 +170,7 @@ class IRMakespanMatcher(MakespanMatcher):
             if log_file:
                 logging.info('[BEGIN ROUNDING ITERATION]: %d' % count)
             fractional_assignments = {}
-            r_fractional = {}
+            #r_fractional = {}
             sol = self.sol_as_dict()
             fractional_vars = []
 
@@ -177,27 +178,27 @@ class IRMakespanMatcher(MakespanMatcher):
                 for j in range(self.n_pap):
                     if j not in fractional_assignments:
                         fractional_assignments[j] = []
-                    if i not in r_fractional:
-                        r_fractional[i] = []
+                    #if i not in r_fractional:
+                    #    r_fractional[i] = []
 
-                    if sol[self.var_name(i,j)] == 0.0 and \
+                    if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
                         self.add_round_const(i, j, 0.0, log_file)
                         integral_assignments[i][j] = 0.0
 
-                    elif sol[self.var_name(i,j)] == 1.0 and \
+                    elif sol[self.var_name(i, j)] == 1.0 and \
                                     integral_assignments[i][j] != 1.0:
                         self.add_round_const(i, j, 1.0, log_file)
                         integral_assignments[i][j] = 1.0
 
-                    elif sol[self.var_name(i,j)] != 1.0 and \
-                                    sol[self.var_name(i,j)] != 0.0:
+                    elif sol[self.var_name(i, j)] != 1.0 and \
+                                    sol[self.var_name(i, j)] != 0.0:
                         fractional_assignments[j].append(
                             (i, j, sol[self.var_name(i, j)]))
                         fractional_vars.append((i, j, sol[self.var_name(i, j)]))
 
-                        r_fractional[i].append((i,j,sol[self.var_name(i,j)]))
-                        integral_assignments[i][j] = sol[self.var_name(i,j)]
+                     #   r_fractional[i].append((i, j, sol[self.var_name(i, j)]))
+                        integral_assignments[i][j] = sol[self.var_name(i, j)]
 
             for (paper, frac_vars) in fractional_assignments.items():
                 if len(frac_vars) == 2:
@@ -214,6 +215,7 @@ class IRMakespanMatcher(MakespanMatcher):
                             return self.round_fractional(integral_assignments,
                                                          log_file, count + 1)
 
+    # THIS METHOD IS BROKEN NOW
     def count_tight_rev_constr(self, sol):
         """Return the number of tight reviewer load constraints."""
         tight = 0
@@ -238,7 +240,7 @@ class IRMakespanMatcher(MakespanMatcher):
 
 if __name__ == "__main__":
     ws = np.genfromtxt(
-        '../../data/train/200-200-2.0-5.0-skill_based/weights.txt')
+        'data/train/200-200-2.0-5.0-skill_based/weights.txt')
     a = [3] * np.size(ws, axis=0)
     b = [3] * np.size(ws, axis=1)
 
@@ -246,6 +248,7 @@ if __name__ == "__main__":
 
     x = IRMakespanMatcher(a, b, ws, init_makespan)
     s = time.time()
-    x.solve_with_current_makespan()
+    x.solve()
+
     print(time.time() - s)
     print("[done.]")
