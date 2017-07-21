@@ -4,7 +4,7 @@ source `pwd`/swarm/setup.sh
 
 DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
-COVERAGE=3
+COVERAGE=5
 ALG="ir"
 
 for ms in `seq 0 0.25 ${COVERAGE}`
