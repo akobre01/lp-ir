@@ -18,6 +18,7 @@ if __name__ == "__main__":
     """
     parser = argparse.ArgumentParser(
         description='Run gurobis ILP solver on dataset.')
+    parser.add_argument('load_const', type=int, help='max papers / reviewers.')
     parser.add_argument('cov_const', type=int, help='# of reviewers per paper')
     parser.add_argument('weight_file', type=str,
                         help='the file from which to read the weights')
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     n_rev = np.size(weights, axis=0)
     n_pap = np.size(weights, axis=1)
 
-    max_load = 2 * np.ceil(n_pap * float(coverage) / n_rev)
+    max_load = args.load_const
     out_dir = args.output
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)

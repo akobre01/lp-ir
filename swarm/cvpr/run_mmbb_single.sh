@@ -18,11 +18,12 @@ set -exu
 
 DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
-COVERAGE=$1
+LOAD=$1
+COVERAGE=$2
+MS=$3
+GAP=$4
 ALG="bb"
-MS=$2
-GAP=$3
-OUTDIR="results/${DATA_NAME}-cov=${COVERAGE}/${ALG}-ms=${MS}/"
+OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=${MS}-gap=${GAP}/"
 
 # Create output director
 mkdir -p $OUTDIR
