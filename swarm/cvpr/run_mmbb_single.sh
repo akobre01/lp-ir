@@ -29,6 +29,6 @@ OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=${MS}-gap=${
 mkdir -p $OUTDIR
 
 # Run the basic lp formulation of paper matching.
-python -m src.exps.run_mmbb $COVERAGE $DATASET $OUTDIR -m $MS -g $GAP
+python -m src.exps.run_mmbb $LOAD $COVERAGE $DATASET $OUTDIR -m $MS -g $GAP
 
 exit
