@@ -18,10 +18,8 @@ DATA_NAME=$1
 DATASET=$2
 LOAD=$3
 COVERAGE=$4
-MS=$5
-GAP=$6
 ALG="bb"
-OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=${MS}-gap=${GAP}/"
+OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=0.0/"
 
 # Create output director
 mkdir -p $OUTDIR
