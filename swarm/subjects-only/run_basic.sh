@@ -13,7 +13,7 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=11
+LOAD=8
 COVERAGE=3
 
 # Run the basic lp formulation of paper matching.

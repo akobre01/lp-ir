@@ -13,7 +13,7 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="acs-0.9-pow-0.9-subjects"
 DATASET="data/cvpr/acs-0.9-pow-0.9-subjects.npy"
 
-LOAD=20
+LOAD=8
 COVERAGE=3
 ALG="ir"
 
