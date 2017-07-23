@@ -13,7 +13,7 @@ source `pwd`/blake/setup.sh
 DATA_NAME="acs-0.9-pow-0.9-subjects"
 DATASET="data/cvpr/acs-0.9-pow-0.9-subjects.npy"
 
-LOAD=8
+LOAD=11
 COVERAGE=3
 LOGDIR=$PM_ROOT/logs/${DATA_NAME}
 LOGFILE=$LOGDIR/run_basic.log

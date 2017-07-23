@@ -13,7 +13,7 @@ source `pwd`/blake/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=8
+LOAD=11
 COVERAGE=3
 
 for gap in `seq 0 0.05 0.3`
