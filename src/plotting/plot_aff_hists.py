@@ -1,8 +1,11 @@
+import matplotlib as mlp
+mlp.use('Agg')
+import matplotlib.pyplot as plt
+
 import argparse
 import numpy as np
 import os
 
-from matplotlib import pyplot as plt
 from .plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
 
 
