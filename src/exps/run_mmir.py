@@ -48,7 +48,7 @@ if __name__ == "__main__":
     s = time.time()
     if args.makespan:
         ir.change_makespan(args.makespan)
-        ir.solve_with_current_makespan()
+        ir.round_fractional()
     else:
         ir.solve()
     t = time.time() - s

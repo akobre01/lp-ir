@@ -18,7 +18,7 @@ DATA_NAME=$1
 DATASET=$2
 LOAD=$3
 COVERAGE=$4
-ALG="bb"
+ALG="basic"
 OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=0.0/"
 
 # Create output director

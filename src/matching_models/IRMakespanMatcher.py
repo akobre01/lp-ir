@@ -144,14 +144,25 @@ class IRMakespanMatcher(MakespanMatcher):
         if log_file:
             logging.info("[OBJ]: %f" % self.objective_val())
 
-    def round_fractional(self, integral_assignments=None, log_file=None, count = 0):
+    def round_fractional(self, integral_assignments=None, log_file=None,
+                         count=0):
         """Round a fractional solution.
 
         This is the meat of the iterative relaxation approach.  First, if the
         solution to the relaxed LP is integral, then we're done--return the
         solution. Otherwise, here's what we do:
         1. if a variable is integral, lock it's value to that integer.
-        2.
+        2. find one paper with exactly 2 fractionally assigned reviewers and
+           drop the makespan constraint on that reviewer.
+
+        Args:
+            integral_assignments - np.array of revs x paps (initially None).
+            log_file - the log file if exists.
+            count - (int) to keep track of the number of calls to this function.
+
+        Returns:
+            Nothing--has the side effect or storing an assignment matrix in this
+            class.
         """
         if integral_assignments is None:
             integral_assignments = np.ones((self.n_rev, self.n_pap)) * -1
