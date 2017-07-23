@@ -11,7 +11,7 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
 
-LOAD=8
+LOAD=11
 COVERAGE=3
 ALG="bb"
 
