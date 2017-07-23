@@ -21,7 +21,7 @@ COVERAGE=$4
 MS=$5
 ALG="ir"
 
-OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAG\E}/${ALG}/ms=${MS}/"
+OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=${MS}/"
 
 # Create output director
 mkdir -p $OUTDIR
