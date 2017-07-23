@@ -13,7 +13,7 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="acs-0.9-pow-0.9-subjects"
 DATASET="data/cvpr/acs-0.9-pow-0.9-subjects.npy"
 
-LOAD=11
+LOAD=20
 COVERAGE=3
 
 # Run the basic lp formulation of paper matching.
