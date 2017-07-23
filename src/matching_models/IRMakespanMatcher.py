@@ -180,7 +180,6 @@ class IRMakespanMatcher(MakespanMatcher):
             if log_file:
                 logging.info('[BEGIN ROUNDING ITERATION]: %d' % count)
             fractional_assignments = {}
-            #r_fractional = {}
             sol = self.sol_as_dict()
             fractional_vars = []
 
@@ -188,8 +187,6 @@ class IRMakespanMatcher(MakespanMatcher):
                 for j in range(self.n_pap):
                     if j not in fractional_assignments:
                         fractional_assignments[j] = []
-                    #if i not in r_fractional:
-                    #    r_fractional[i] = []
 
                     if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
@@ -207,7 +204,6 @@ class IRMakespanMatcher(MakespanMatcher):
                             (i, j, sol[self.var_name(i, j)]))
                         fractional_vars.append((i, j, sol[self.var_name(i, j)]))
 
-                     #   r_fractional[i].append((i, j, sol[self.var_name(i, j)]))
                         integral_assignments[i][j] = sol[self.var_name(i, j)]
 
             for (paper, frac_vars) in fractional_assignments.items():
@@ -222,6 +218,7 @@ class IRMakespanMatcher(MakespanMatcher):
                                 logging.info(
                                     '[REMOVED ON ITERATION]: %d' % count)
                             self.m.remove(c)
+                            self.m.update()
                             return self.round_fractional(integral_assignments,
                                                          log_file, count + 1)
 
