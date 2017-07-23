@@ -22,7 +22,7 @@ class IRMakespanMatcher(MakespanMatcher):
         any rewviewer and that paper.
         """
 
-    def __init__(self, alphas, betas, weights, makespan=0):
+    def __init__(self, loads, coverages, weights, makespan=0):
         """Initialize a makespan matcher
 
         Args:
@@ -40,8 +40,8 @@ class IRMakespanMatcher(MakespanMatcher):
         """
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
-        self.alphas = alphas
-        self.betas = betas
+        self.loads = loads
+        self.coverages = coverages
         self.weights = weights
         self.id = uuid.uuid4()
         self.m = Model("%s : IRMakespan" % str(self.id))
@@ -70,13 +70,13 @@ class IRMakespanMatcher(MakespanMatcher):
         self.m.setObjective(obj, GRB.MAXIMIZE)
 
         # Reviewer constraints.
-        for r, alpha in enumerate(self.alphas):
-            self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
+        for r, load in enumerate(self.loads):
+            self.m.addConstr(sum(self.lp_vars[r]) <= load, "r" + str(r))
 
         # Paper constraints.
-        for p, beta in enumerate(self.betas):
+        for p, cov in enumerate(self.coverages):
             self.m.addConstr(sum([self.lp_vars[i][p]
-                                  for i in range(self.n_rev)]) == beta,
+                                  for i in range(self.n_rev)]) == cov,
                              "p" + str(p))
 
         # Makespan constraints.
@@ -93,8 +93,8 @@ class IRMakespanMatcher(MakespanMatcher):
     def integral_sol_found(self):
         """Return true if all lp variables are integral."""
         sol = self.sol_as_dict()
-        return all(sol[self.var_name(i,j)] == 1.0 or
-                   sol[self.var_name(i,j)] == 0.0
+        return all(sol[self.var_name(i, j)] == 1.0 or
+                   sol[self.var_name(i, j)] == 0.0
                    for i in range(self.n_rev) for j in range(self.n_pap))
 
     def add_round_const(self, i, j, val, log_file=None):
@@ -128,7 +128,7 @@ class IRMakespanMatcher(MakespanMatcher):
                 self.m.remove(c)
 
         if mx <= 0:
-            mx = np.max(self.alphas) * np.max(self.weights)
+            mx = np.max(self.loads) * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
         begin_opt = time.time()
@@ -170,8 +170,7 @@ class IRMakespanMatcher(MakespanMatcher):
         self.m.optimize()
 
         if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
-            assert(False)
-            return
+            assert False, self.m.status
 
         if self.integral_sol_found():
             if log_file:
@@ -255,11 +254,11 @@ if __name__ == "__main__":
     a = [3] * np.size(ws, axis=0)
     b = [3] * np.size(ws, axis=1)
 
-    init_makespan = 1.5
+    init_makespan = 0.0
 
     x = IRMakespanMatcher(a, b, ws, init_makespan)
     s = time.time()
-    x.solve()
+    x.round_fractional()
 
     print(time.time() - s)
     print("[done.]")

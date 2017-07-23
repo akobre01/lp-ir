@@ -20,7 +20,7 @@ class MakespanMatcher(object):
     """
 
     # TODO(AK): We should add reviewer lower bounds to this.
-    def __init__(self, alphas, betas, weights, makespan=0, gap=0.0):
+    def __init__(self, loads, coverages, weights, makespan=0, gap=0.0):
         """Initialize a makespan matcher
 
         Args:
@@ -39,8 +39,8 @@ class MakespanMatcher(object):
         """
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
-        self.alphas = alphas
-        self.betas = betas
+        self.loads = loads
+        self.coverages = coverages
         self.weights = weights
         self.id = uuid.uuid4()
         self.m = Model("%s: makespan matcher" % str(self.id))
@@ -70,20 +70,20 @@ class MakespanMatcher(object):
         self.m.setObjective(obj, GRB.MAXIMIZE)
 
         # Reviewer constraints.
-        for r, alpha in enumerate(self.alphas):
-            self.m.addConstr(sum(self.lp_vars[r]) <= alpha, "r" + str(r))
+        for r, load in enumerate(self.loads):
+            self.m.addConstr(sum(self.lp_vars[r]) <= load, "r" + str(r))
 
         # Paper constraints.
-        for p, beta in enumerate(self.betas):
+        for p, cov in enumerate(self.coverages):
             self.m.addConstr(sum([self.lp_vars[i][p]
-                                  for i in range(self.n_rev)]) == beta,
+                                  for i in range(self.n_rev)]) == cov,
                              "p" + str(p))
 
         # Makespan constraints.
         for p in range(self.n_pap):
             self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]
                                   for i in range(self.n_rev)]) >= self.makespan,
-                             self.ms_constr_prefix  + str(p))
+                             self.ms_constr_prefix + str(p))
         self.m.update()
 
     def change_makespan(self, new_makespan):
@@ -102,7 +102,7 @@ class MakespanMatcher(object):
 
         for p in range(self.n_pap):
             self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]
-                                  for i in range(self.n_rev) ]) >= new_makespan,
+                                  for i in range(self.n_rev)]) >= new_makespan,
                              self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
         self.m.update()
@@ -230,7 +230,7 @@ class MakespanMatcher(object):
             The solution as a matrix.
         """
         if mx <= 0:
-            mx = np.max(self.alphas) * np.max(self.weights)
+            mx = np.max(self.loads) * np.max(self.weights)
 
         self.find_makespan_bin(mn, mx, itr, log_file)
 
