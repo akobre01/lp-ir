@@ -17,7 +17,7 @@ LOAD=8
 COVERAGE=3
 ALG="ir"
 
-for ms in `seq 0 0.05 0.4`
+for ms in `seq 0 0.5 ${COVERAGE}`
 do
     # Run the basic lp formulation of paper matching.
     sbatch $PM_ROOT/bin/cvpr/run_mmir_single.sh $DATA_NAME $DATASET $LOAD $COVERAGE $ms

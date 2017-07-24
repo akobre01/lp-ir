@@ -19,7 +19,7 @@ ALG="bb"
 
 for gap in `seq 0 0.05 0.3`
 do
-    for ms in `seq 0 0.05 0.4`
+    for ms in `seq 0 0.5 ${COVERAGE}`
     do
         # Run the basic lp formulation of paper matching.
         sbatch $PM_ROOT/bin/cvpr/run_mmbb_single.sh $DATA_NAME $DATASET $LOAD $COVERAGE $ms $gap
