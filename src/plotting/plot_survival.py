@@ -46,11 +46,12 @@ if __name__ == '__main__':
         scores = np.sum(assignments * weights, axis=0)
         survivors = []
         file_parts = f.split('/')
-        model = '%s-%s' % (file_parts[-3], file_parts[-2])
+        model = file_parts[-3]
+        run_name = '%s-%s' % (file_parts[-3], file_parts[-2])
         for score_threshold in x_vals:
             survivors.append(len([x for x in scores if x >= score_threshold]) /
                              np.size(scores))
-        ax.plot(x_vals, survivors, label=model, color=MODEL_TO_COLOR[model])
+        ax.plot(x_vals, survivors, label=run_name, color=MODEL_TO_COLOR[model])
     ax.set_ylabel('Fraction Survivors')
     ax.set_xlabel('Paper Assignment Score')
     ax.set_title('Survival')
