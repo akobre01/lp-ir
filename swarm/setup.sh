@@ -13,5 +13,6 @@ fi
 # Setup log dir
 mkdir -p logs
 mkdir -p logs/cvpr
+mkdir -p logs/util
 
 module load gurobi/702
