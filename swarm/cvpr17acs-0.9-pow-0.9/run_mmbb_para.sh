@@ -15,7 +15,7 @@ LOAD=11
 COVERAGE=5
 ALG="bb"
 
-for gap in `seq 0 0.05 0.3`
+for gap in `seq 0 0.05 0.05`
 do
     for ms in `seq 0 0.05 0.4`
     do
