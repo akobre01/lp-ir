@@ -1,3 +1,7 @@
+import matplotlib as mlp
+mlp.use('Agg')
+import matplotlib.pyplot as plt
+
 import argparse
 import glob
 import numpy as np
