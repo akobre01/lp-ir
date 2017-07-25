@@ -46,7 +46,7 @@ if __name__ == '__main__':
         scores = np.sum(assignments * weights, axis=0)
         survivors = []
         file_parts = f.split('/')
-        model = '%s-%s' % (f[-3], f[-2])
+        model = '%s-%s' % (file_parts[-3], file_parts[-2])
         for score_threshold in x_vals:
             survivors.append(len([x for x in scores if x >= score_threshold]) /
                              np.size(scores))
