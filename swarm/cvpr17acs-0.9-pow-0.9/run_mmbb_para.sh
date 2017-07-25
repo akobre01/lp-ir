@@ -12,7 +12,7 @@ DATA_NAME="cvpr17acs-0.9-pow-0.9"
 DATASET="data/cvpr/cvpr17acs-0.9-pow-0.9.npy"
 
 LOAD=11
-COVERAGE=3
+COVERAGE=5
 ALG="bb"
 
 for gap in `seq 0 0.05 0.3`

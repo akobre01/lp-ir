@@ -13,8 +13,8 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="acs-0.9-pow-0.9-subjects"
 DATASET="data/cvpr/acs-0.9-pow-0.9-subjects.npy"
 
-LOAD=8
-COVERAGE=3
+LOAD=11
+COVERAGE=5
 ALG="bb"
 
 for gap in `seq 0 0.05 0.3`
