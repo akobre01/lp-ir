@@ -9,6 +9,6 @@ DATASET="data/cvpr/subjects-only.npy"
 ASSIGNMENTS="${PM_ROOT}/results/${DATA_NAME}-load=${LOAD}-cov=${COV}"
 
 # Run the basic lp formulation of paper matching.
-sbatch $PM_ROOT/bin/util/run_plot_survival.sh $ASSIGNMENTS $DATASET 3
+sbatch $PM_ROOT/bin/util/run_plot_survival.sh $ASSIGNMENTS $DATASET $COV
 
 exit
