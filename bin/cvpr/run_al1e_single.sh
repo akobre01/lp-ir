@@ -20,13 +20,13 @@ LOAD=$3
 COVERAGE=$4
 EXPERT=$5
 GAP=$6
-ALG="bb"
+ALG="al1e"
 OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/expert=${EXPERT}-gap=${GAP}/"
 
 # Create output director
 mkdir -p $OUTDIR
 
 # Run the basic lp formulation of paper matching.
-python -m src.exps.run_al1e $LOAD $COVERAGE $DATASET $OUTDIR -m $EXPERT -g $GAP
+python -m src.exps.run_al1e $LOAD $COVERAGE $DATASET $OUTDIR -e $EXPERT -g $GAP
 
 exit
