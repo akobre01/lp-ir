@@ -73,7 +73,7 @@ class AL1E(object):
         # Expert constraints.
         for p in range(self.n_pap):
             self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]**10000
-                                  for i in range(self.n_rev)])**(1/10000) >= self.makespan,
+                                  for i in range(self.n_rev)]) >= self.makespan**10000,
                              self.ms_constr_prefix + str(p))
         self.m.update()
 
