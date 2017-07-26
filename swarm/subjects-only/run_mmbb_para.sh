@@ -7,17 +7,19 @@ source `pwd`/swarm/setup.sh
 #   2623 * 3 / 1373 ~= 5.73
 # if coverage is 5
 #   2623 * 5 / 1373 ~= 9.55
+# if coverage is 7
+#   2623 * 7 / 1373 ~= 13.37
 # It is different from the other affinity matrices because it only uses
 # subject areas.
 
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=11
-COVERAGE=5
+LOAD=15
+COVERAGE=7
 ALG="bb"
 
-for gap in `seq 0 0.05 0.05`
+for gap in `seq 0.5 0.05 0.05`
 do
     for ms in `seq 0 0.5 ${COVERAGE}`
     do
