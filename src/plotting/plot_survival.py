@@ -7,7 +7,6 @@ import glob
 import numpy as np
 import os
 
-from matplotlib import pyplot as plt
 from .plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
 
 
