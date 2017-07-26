@@ -19,7 +19,7 @@ LOAD=17
 COVERAGE=7
 ALG="al1e"
 
-for gap in `seq 0.5 0.05 0.05`
+for gap in `seq 0.05 0.05 0.05`
 do
     for expert in `seq 0 0.1 1.0`
     do
