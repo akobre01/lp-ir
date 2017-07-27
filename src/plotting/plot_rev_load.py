@@ -26,11 +26,12 @@ if __name__ == "__main__":
 
     assignments = np.load(os.path.join(args.input, 'assignment.npy'))
     rev_load = np.sum(assignments, axis=1)
-    n, _, _ = plt.hist(rev_load)
+    max_revs = np.max(rev_load)
+    n, _, _ = plt.hist(rev_load, bins=max_revs + 1)
     y_max = max(n)
 
     fig, ax = plt.subplots(1, 1)
-    _, _, patches = ax.hist(rev_load)
+    _, _, patches = ax.hist(rev_load, bins=max_revs + 1)
     for patch in patches:
         patch.set_edgecolor('white')
         ax.set_ylabel('# of Reviewers')
