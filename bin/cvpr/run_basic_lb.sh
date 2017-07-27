@@ -20,7 +20,7 @@ LOAD=$3
 LOAD_LB=$4
 COVERAGE=$5
 ALG="basic_lb"
-OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=0.0/"
+OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}-loadlb=${LOAD_LB}/${ALG}/ms=0.0/"
 
 # Create output director
 mkdir -p $OUTDIR

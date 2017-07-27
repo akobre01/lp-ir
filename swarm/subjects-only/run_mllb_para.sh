@@ -15,9 +15,9 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=17
-LOAD_LB=12
-COVERAGE=7
+LOAD=11
+LOAD_LB=7
+COVERAGE=5
 ALG="mllb"
 
 for gap in `seq 0.05 0.05 0.05`
