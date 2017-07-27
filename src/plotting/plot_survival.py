@@ -50,7 +50,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1)
     max_score = args.max_score or 3
     x_vals = np.linspace(0, max_score, num=100)
-    for ms, f in model_to_best.items():
+    for ms, f in model_to_best.values():
         assignments = np.load(f)
         scores = np.sum(assignments * weights, axis=0)
         survivors = []

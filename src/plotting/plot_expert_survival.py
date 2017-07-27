@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1, 1)
     x_vals = np.linspace(0, 1.0, num=100)
-    for ms, f in filelist.values():
+    for ms, f in model_to_best.values():
         assignments = np.load(f)
         scores = np.max(assignments * weights, axis=0)
         survivors = []
