@@ -25,7 +25,7 @@ do
     for ms in `seq 0 0.5 ${COVERAGE}`
     do
         # Run the basic lp formulation of paper matching.
-        sbatch $PM_ROOT/bin/cvpr/run_mmbb_single.sh $DATA_NAME $DATASET $LOAD $LOAD_LB $COVERAGE $ms $gap
+        sbatch $PM_ROOT/bin/cvpr/run_mllb_single.sh $DATA_NAME $DATASET $LOAD $LOAD_LB $COVERAGE $ms $gap
     done
 done
 exit

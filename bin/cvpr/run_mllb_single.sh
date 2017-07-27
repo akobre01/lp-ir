@@ -22,7 +22,7 @@ COVERAGE=$5
 MS=$6
 GAP=$7
 ALG="mllb"
-OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}/${ALG}/ms=${MS}-gap=${GAP}/"
+OUTDIR="results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}-loadlb=${LOAD_LB}/${ALG}/ms=${MS}-gap=${GAP}/"
 
 # Create output director
 mkdir -p $OUTDIR
