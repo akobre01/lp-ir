@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(1, 1)
     assert np.all(weights <= 1.0)
-    model = args.input.split('/')[-1]
+    model = args.input.split('/')[-2]
     _, _, patches = ax.hist(scores, bins=bins, color=MODEL_TO_COLOR[model])
     for patch in patches:
         patch.set_edgecolor('white')
