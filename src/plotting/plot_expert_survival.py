@@ -36,9 +36,19 @@ if __name__ == '__main__':
     filelist = [f for f in glob.glob(args.input + '/**/assignment.npy',
                                      recursive=True)]
 
+    model_to_best = {}
+    for f in filelist:
+        file_parts = f.split('/')
+        model = file_parts[-3]
+        params = file_parts[-2].split('-')
+        ms = params[0]
+        ms_val = ms.split('=')[1]
+        if model not in model_to_best or model_to_best[model][0] <= ms_val:
+            model_to_best[model] = (ms_val, f)
+
     fig, ax = plt.subplots(1, 1)
     x_vals = np.linspace(0, 1.0, num=100)
-    for f in filelist:
+    for ms, f in filelist.values():
         assignments = np.load(f)
         scores = np.max(assignments * weights, axis=0)
         survivors = []

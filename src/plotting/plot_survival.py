@@ -47,7 +47,6 @@ if __name__ == '__main__':
         if model not in model_to_best or model_to_best[model][0] <= ms_val:
             model_to_best[model] = (ms_val, f)
 
-
     fig, ax = plt.subplots(1, 1)
     max_score = args.max_score or 3
     x_vals = np.linspace(0, max_score, num=100)

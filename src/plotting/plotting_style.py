@@ -8,7 +8,7 @@ MODEL_TO_COLOR['da'] = '#e78ac3'
 MODEL_TO_COLOR['al1e'] = '#a6d854'
 
 MODEL_TO_COLOR['irlb'] = '#66c2a5'
-MODEL_TO_COLOR['bblb'] = '#fc8d62'
+MODEL_TO_COLOR['mllb'] = '#fc8d62'
 MODEL_TO_COLOR['basic_lb'] = '#8da0cb'
 MODEL_TO_COLOR['dalb'] = '#e78ac3'
 MODEL_TO_COLOR['al1elb'] = '#a6d854'
