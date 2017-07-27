@@ -2,9 +2,9 @@
 
 source `pwd`/swarm/setup.sh
 
-LOAD=11
-COV=5
-LB=7
+LOAD=7
+COV=3
+LB=4
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 ASSIGNMENTS="${PM_ROOT}/results/${DATA_NAME}-load=${LOAD}-cov=${COV}-loadlb=${LB}"
