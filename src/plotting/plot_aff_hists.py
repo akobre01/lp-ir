@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 import argparse
 import numpy as np
+import scipy.stats as sc
 import os
 
 from .plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
@@ -36,12 +37,19 @@ if __name__ == "__main__":
     assignments = np.load(os.path.join(args.input, 'assignment.npy'))
     scores = np.sum(assignments * weights, axis=0)
     n, _, _ = plt.hist(scores, bins=bins)
+
+    # compute entropy
+    entr = sc.entropy(n, base=2)
+    outfile = open(os.path.join(args.input, 'entropy.txt'), 'w')
+    outfile.write(entr)
+    outfile.close()
+
     max_height = max(n)
     y_max = max(y_max, max_height)
 
     fig, ax = plt.subplots(1, 1)
     assert np.all(weights <= 1.0)
-    model = args.input.split('/')[-3]
+    model = args.input.split('/')[-2]
     _, _, patches = ax.hist(scores, bins=bins, color=MODEL_TO_COLOR[model])
     for patch in patches:
         patch.set_edgecolor('white')
