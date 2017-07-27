@@ -21,10 +21,10 @@ COVERAGE=3
 
 for gap in `seq 0.05 0.05 0.05`
 do
-    for ms in `seq 0 0.5 ${COVERAGE}`
+    for expert in `seq 0 0.1 1.0`
     do
         # Run the basic lp formulation of paper matching.
-        sbatch $PM_ROOT/bin/cvpr/run_mllb_single.sh $DATA_NAME $DATASET $LOAD $LOAD_LB $COVERAGE $ms $gap
+        sbatch $PM_ROOT/bin/cvpr/run_al1elb_single.sh $DATA_NAME $DATASET $LOAD $LOAD_LB $COVERAGE $expert $gap
     done
 done
 exit

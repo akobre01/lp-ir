@@ -6,16 +6,18 @@ import uuid
 from gurobipy import *
 
 
-class AL1E(object):
-    """At-least-1 Expert model.
+class AL1ELB(object):
+    """At-least-1 Expert model with lower bound.
     """
 
     # TODO(AK): We should add reviewer lower bounds to this.
-    def __init__(self, loads, coverages, weights, makespan=0, gap=0.0):
+    def __init__(self, loads, load_lb, coverages, weights, makespan=0, gap=0.0):
         """Initialize a makespan matcher
 
         Args:
             loads - a list of integers specifying the maximum number of papers
+                  for each reviewer.
+            loads_lb - a list of integers specifying the minimum papers
                   for each reviewer.
             coverages - a list of integers specifying the number of reviews per
                  paper.
@@ -31,6 +33,7 @@ class AL1E(object):
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
         self.loads = loads
+        self.load_lb = load_lb
         self.coverages = coverages
         self.weights = weights
         self.id = uuid.uuid4()
@@ -63,6 +66,8 @@ class AL1E(object):
         # Reviewer constraints.
         for r, load in enumerate(self.loads):
             self.m.addConstr(sum(self.lp_vars[r]) <= load, "r" + str(r))
+        for r, load_lb in enumerate(self.load_lb):
+            self.m.addConstr(sum(self.lp_vars[r]) >= load_lb, "r_lb" + str(r))
 
         # Paper constraints.
         for p, cov in enumerate(self.coverages):
