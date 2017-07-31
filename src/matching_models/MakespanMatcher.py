@@ -182,7 +182,8 @@ class MakespanMatcher(object):
         else:
             raise Exception(
                 'You must have solved the model optimally or suboptimally '
-                'before calling this function.')
+                'before calling this function.\nSTATUS %s\tMAKESPAN %f' % (
+                    self.m.status, self.makespan))
 
     def solve_with_current_makespan(self):
         """Solve the ILP with the current makespan.
