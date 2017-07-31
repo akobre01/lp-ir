@@ -46,6 +46,8 @@ class IRDALB(MakespanMatcher):
         self.m.setParam('OutputFlag', 0)
 
         self.ms_constr_prefix = "ms"
+        self.load_lb_constr_prefix = "llb"
+        self.load_ub_constr_prefix = "lub"
         self.round_constr_prefix = "round"
 
         # primal variables
@@ -66,9 +68,11 @@ class IRDALB(MakespanMatcher):
 
         # Reviewer constraints.
         for r, load in enumerate(self.loads):
-            self.m.addConstr(sum(self.lp_vars[r]) <= load, "r" + str(r))
+            self.m.addConstr(sum(self.lp_vars[r]) <= load,
+                             '%s%s' % (self.load_lb_constr_prefix, str(r)))
         for r, load_lb in enumerate(self.load_lb):
-            self.m.addConstr(sum(self.lp_vars[r]) >= load_lb, "r" + str(r))
+            self.m.addConstr(sum(self.lp_vars[r]) >= load_lb,
+                             '%s%s' % (self.load_ub_constr_prefix, str(r)))
 
         # Paper constraints.
         for p, cov in enumerate(self.coverages):
@@ -86,6 +90,16 @@ class IRDALB(MakespanMatcher):
     def makespan_constr_name(self, p):
         """Get the name of the makespan constraint for paper p."""
         return self.ms_constr_prefix + str(p)
+
+    @staticmethod
+    def load_lb_constr_name(self, r):
+        """Get the load constraints for reviewer r."""
+        return '%s%s' % (self.load_lb_constr_prefix, str(r))
+
+    @staticmethod
+    def load_ub_constr_name(self, r):
+        """Get the load constraints for reviewer r."""
+        return '%s%s' % (self.load_ub_constr_prefix, str(r))
 
     def integral_sol_found(self):
         """Return true if all lp variables are integral."""
@@ -176,14 +190,15 @@ class IRDALB(MakespanMatcher):
         else:
             if log_file:
                 logging.info('[BEGIN ROUNDING ITERATION]: %d' % count)
-            fractional_assignments = {}
+            frac_assign_p = {}
+            frac_assign_r = {}
             sol = self.sol_as_dict()
             fractional_vars = []
 
             for i in range(self.n_rev):
                 for j in range(self.n_pap):
-                    if j not in fractional_assignments:
-                        fractional_assignments[j] = []
+                    if j not in frac_assign_p:
+                        frac_assign_p[j] = []
 
                     if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
@@ -197,13 +212,15 @@ class IRDALB(MakespanMatcher):
 
                     elif sol[self.var_name(i, j)] != 1.0 and \
                                     sol[self.var_name(i, j)] != 0.0:
-                        fractional_assignments[j].append(
+                        frac_assign_p[j].append(
+                            (i, j, sol[self.var_name(i, j)]))
+                        frac_assign_r[i].append(
                             (i, j, sol[self.var_name(i, j)]))
                         fractional_vars.append((i, j, sol[self.var_name(i, j)]))
 
                         integral_assignments[i][j] = sol[self.var_name(i, j)]
 
-            for (paper, frac_vars) in fractional_assignments.items():
+            for (paper, frac_vars) in frac_assign_p.items():
                 if len(frac_vars) == 2:
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.makespan_constr_name(paper):
@@ -212,6 +229,21 @@ class IRDALB(MakespanMatcher):
                                              str(c.ConstrName))
                                 logging.info(
                                     '[REMOVED CONSTR PAPER]: %d' % paper)
+                                logging.info(
+                                    '[REMOVED ON ITERATION]: %d' % count)
+                            self.m.remove(c)
+
+            for (rev, frac_vars) in frac_assign_r.items():
+                if len(frac_vars) == 2:
+                    for c in self.m.getConstrs():
+                        if c.ConstrName == self.load_lb_constr_name(rev) \
+                                or c.ConstrName == self.load_ub_constr_name(rev):
+                            if log_file:
+                                logging.info(
+                                    '[REMOVED CONSTR NAME]: %s' %
+                                    str(c.ConstrName))
+                                logging.info(
+                                    '[REMOVED CONSTR LOAD]: %d' % rev)
                                 logging.info(
                                     '[REMOVED ON ITERATION]: %d' % count)
                             self.m.remove(c)
@@ -225,7 +257,7 @@ class IRDALB(MakespanMatcher):
         for i in range(self.n_rev):
             assignment_count = 0
             for j in range(self.n_pap):
-                assignment_count += sol[self.var_name(i,j)]
+                assignment_count += sol[self.var_name(i, j)]
             if assignment_count == self.alpha:
                 tight += 1
         return tight
