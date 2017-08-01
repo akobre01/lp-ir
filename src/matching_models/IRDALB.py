@@ -199,6 +199,7 @@ class IRDALB(MakespanMatcher):
                 for j in range(self.n_pap):
                     if j not in frac_assign_p:
                         frac_assign_p[j] = []
+                        frac_assign_r[i] = []
 
                     if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
@@ -281,7 +282,7 @@ if __name__ == "__main__":
 
     init_makespan = 0.0
 
-    x = IRMakespanMatcher(a, b, ws, init_makespan)
+    x = IRDALB(a, a, b, ws, init_makespan)
     s = time.time()
     x.round_fractional()
 
