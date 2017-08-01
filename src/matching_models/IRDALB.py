@@ -199,6 +199,7 @@ class IRDALB(MakespanMatcher):
                 for j in range(self.n_pap):
                     if j not in frac_assign_p:
                         frac_assign_p[j] = []
+                    if i not in frac_assign_r:
                         frac_assign_r[i] = []
 
                     if sol[self.var_name(i, j)] == 0.0 and \
