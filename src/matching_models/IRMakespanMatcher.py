@@ -178,7 +178,7 @@ class IRMakespanMatcher(MakespanMatcher):
         print("FINSHED OPTIMIZTION")
 
         if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
-            assert False, self.m.status
+            assert False, '%s\t%s' % (self.m.status, self.makespan)
 
         if self.integral_sol_found():
             if log_file:
@@ -196,6 +196,7 @@ class IRMakespanMatcher(MakespanMatcher):
                 for j in range(self.n_pap):
                     if j not in frac_assign_p:
                         frac_assign_p[j] = []
+                        frac_assign_p[i] = []
 
                     if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
