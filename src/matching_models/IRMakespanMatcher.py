@@ -86,7 +86,6 @@ class IRMakespanMatcher(MakespanMatcher):
                              self.ms_constr_prefix + str(p))
         self.m.update()
 
-    @staticmethod
     def makespan_constr_name(self, p):
         """Get the name of the makespan constraint for paper p."""
         return self.ms_constr_prefix + str(p)

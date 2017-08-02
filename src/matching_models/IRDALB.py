@@ -91,12 +91,10 @@ class IRDALB(MakespanMatcher):
         """Get the name of the makespan constraint for paper p."""
         return self.ms_constr_prefix + str(p)
 
-    @staticmethod
     def load_lb_constr_name(self, r):
         """Get the load constraints for reviewer r."""
         return '%s%s' % (self.load_lb_constr_prefix, str(r))
 
-    @staticmethod
     def load_ub_constr_name(self, r):
         """Get the load constraints for reviewer r."""
         return '%s%s' % (self.load_ub_constr_prefix, str(r))
@@ -181,7 +179,7 @@ class IRDALB(MakespanMatcher):
         self.m.optimize()
 
         if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
-            assert False, self.m.status
+            assert False, '%s\t%s' % (self.m.status, self.makespan)
 
         if self.integral_sol_found():
             if log_file:
