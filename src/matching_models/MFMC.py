@@ -37,7 +37,7 @@ class MFMC(object):
         self.sink_fwd_costs = np.zeros(self.n_pap)
         self.sink_bwd_costs = np.zeros(self.n_pap)
         self.sink_caps = coverages[:]
-        self.fwd_costs = weights[:]
+        self.fwd_costs = 1.0 / weights[:]
         self.bwd_costs = np.zeros(np.shape(self.fwd_costs))
         self.assign = np.zeros((self.n_rev, self.n_pap))
 
@@ -166,30 +166,17 @@ class MFMC(object):
 
     def solve(self):
         """Solve matching."""
-        revp, papp, sp = self.compute_potentials()
-        self.reduce_costs(revp, papp, sp)
-        found = self.augment_assign()
-        print(found)
+        found = True
+        while found:
+            revp, papp, sp = self.compute_potentials()
+            self.reduce_costs(revp, papp, sp)
+            found = self.augment_assign()
 
 
 if __name__ == '__main__':
-    costs = np.array([[1, 9, 3],
-                      [1, 4, 2],
-                      [1, 14, 5]])
+    costs = np.array([[.1, .9, .3],
+                      [.1, .4, .2],
+                      [.1, .14, .5]])
     m = MFMC(np.array([2, 2, 2]), np.array([2, 2, 2]), costs)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
-    m.solve()
-    print(m.assign)
     m.solve()
     print(m.assign)
