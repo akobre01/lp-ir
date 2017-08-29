@@ -52,7 +52,7 @@ class MaxFlowMinCost(object):
                 self.start_inds.append(i)
                 self.end_inds.append(self.n_rev + j)
                 self.caps.append(1)
-                self.costs.append(int(2.0 / (1.0 + self.weights[i, j])))
+                self.costs.append(int(-1.0 - 10000 * self.weights[i, j]))
         for j in range(self.n_pap):
             self.start_inds.append(self.n_rev + j)
             self.end_inds.append(self.sink)
