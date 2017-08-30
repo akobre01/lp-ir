@@ -64,8 +64,16 @@ class ResidFlow(object):
         self.source = self.n_rev + self.n_pap
         self.sink = self.n_rev + self.n_pap + 1
 
-    def _group_papers(self):
-        """Construct paper groups.
+    def _refresh_internal_vars(self):
+        """Set start, end, caps, costs to be empty."""
+        self.min_cost_flow = pywrapgraph.SimpleMinCostFlow()
+        self.start_inds = []
+        self.end_inds = []
+        self.caps = []
+        self.costs = []
+
+    def _grp_paps_by_ms(self):
+        """Group papers by makespan.
 
         Divide papers into 3 groups based on their paper scores. A paper score
         is the sum affinities among all reviewers assigned to review that paper.
@@ -90,6 +98,28 @@ class ResidFlow(object):
         assert(np.size(g1) + np.size(g2) + np.size(g3) == self.n_pap)
         return g1, g2, g3
 
+    def _grp_paps_by_cov(self):
+        """Group papers by coverage.
+
+        Divide papers into 3 groups based on coverage. The first group will
+        contain papers with 1 too few reviewers.  The second group will contain
+        papers with 1 too many reviewers. The third group will contain papers
+        with 1 too many reviewers.
+
+        Args:
+            None
+
+        Returns:
+            A 3-tuple of paper ids.
+        """
+        covs = np.sum(self.solution, axis=0)
+        g1 = np.where(covs == self.coverages - 1)[0]
+        g2 = np.where(covs == self.coverages)[0]
+        g3 = np.where(covs == self.coverages + 1)[0]
+
+        assert(np.size(g1) + np.size(g2) + np.size(g3) == self.n_pap)
+        return g1, g2, g3
+
     def _worst_reviewer(self, papers):
         """Get the worst reviewer from each paper in the input.
 
@@ -104,8 +134,58 @@ class ResidFlow(object):
         worst_revs = np.argmin(tmp, axis=0)
         return worst_revs[papers], papers
 
-    def _construct_reassignment_network(self, g1, g2, g3):
-        """Construct the network the reassigns reviewers from g1 to g3.
+    def _construct_sol_validifier_network(self, g1):
+        """Construct a network to make an invalid solution valid.
+
+        Args:
+            g1 - numpy array of paper ids in group 1 (-1 reviewer).
+
+
+        Returns:
+            None -- modifies the internal min_cost_flow network.
+        """
+        # Must convert to python ints first.
+        g1 = [int(x) for x in g1]
+
+        # First construct edges between the source and each available reviewer.
+        rev_caps = self.loads - np.sum(self.solution, axis=1)
+        assert(np.size(rev_caps) == self.n_rev)
+        for i in range(self.n_rev):
+            self.start_inds.append(self.source)
+            self.end_inds.append(i)
+            self.caps.append(int(rev_caps[i]))
+            self.costs.append(0)
+
+        # Next construct the sink node and edges to each paper in g1.
+        for i in range(np.size(g1)):
+            self.start_inds.append(self.n_rev + g1[i])
+            self.end_inds.append(self.sink)
+            self.caps.append(1)
+            self.costs.append(0)
+
+        # For each reviewer not assigned to a paper in g1, create an edge.
+        revs, paps1 = np.nonzero((self.solution - 1.0)[:, g1])
+        for i in range(np.size(revs)):
+            rev = int(revs[i])
+            pap = g1[paps1[i]]
+            self.start_inds.append(rev)
+            self.end_inds.append(self.n_rev + pap)
+            self.caps.append(1)
+            self.costs.append(int(-1.0 - 10000 * self.weights[rev, pap]))
+
+        self.supplies = np.zeros(self.n_rev + self.n_pap + 2)
+        self.supplies[self.source] = int(np.size(g1))
+        self.supplies[self.sink] = -int(np.size(g1))
+
+        for i in range(len(self.start_inds)):
+            self.min_cost_flow.AddArcWithCapacityAndUnitCost(
+                self.start_inds[i], self.end_inds[i], self.caps[i],
+                self.costs[i])
+        for i in range(len(self.supplies)):
+            self.min_cost_flow.SetNodeSupply(i, int(self.supplies[i]))
+
+    def _construct_ms_improvement_network(self, g1, g2, g3):
+        """Construct the network the reassigns reviewers to improve makespan.
 
         Args:
             g1 - numpy array of paper ids in group 1 (best).
@@ -184,11 +264,9 @@ class ResidFlow(object):
         for i in range(len(self.supplies)):
             self.min_cost_flow.SetNodeSupply(i, int(self.supplies[i]))
 
-    def solve(self):
-        """Solve matching."""
+    def solve_ms_improvement(self):
+        """Reassign reviewers to improve the makespan."""
         if self.min_cost_flow.Solve() == self.min_cost_flow.OPTIMAL:
-            print('Total cost = ', self.min_cost_flow.OptimalCost())
-            print()
             for arc in range(self.min_cost_flow.NumArcs()):
                 # Can ignore arcs leading out of source or into sink.
                 if self.min_cost_flow.Tail(arc) != self.source and \
@@ -197,13 +275,28 @@ class ResidFlow(object):
                         if self.min_cost_flow.UnitCost(arc) > 0:
                             pap = self.min_cost_flow.Tail(arc) - self.n_rev
                             rev = self.min_cost_flow.Head(arc)
-                            print("UNASSIGNING: %s, %s" % (rev, pap))
                             self.solution[rev, pap] = 0.0
                         else:
                             rev = self.min_cost_flow.Tail(arc)
                             pap = self.min_cost_flow.Head(arc) - self.n_rev
-                            print("ASSIGNING: %s, %s" % (rev, pap))
                             self.solution[rev, pap] = 1.0
+            self.solved = True
+        else:
+            print('There was an issue with the min cost flow input.')
+
+    def solve_validifier(self):
+        """Reassign reviewers to make the matching valid."""
+        if self.min_cost_flow.Solve() == self.min_cost_flow.OPTIMAL:
+            for arc in range(self.min_cost_flow.NumArcs()):
+                # Can ignore arcs leading out of source or into sink.
+                if self.min_cost_flow.Tail(arc) != self.source and \
+                                self.min_cost_flow.Head(arc) != self.sink:
+                    if self.min_cost_flow.Flow(arc) > 0:
+                        rev = self.min_cost_flow.Tail(arc)
+                        pap = self.min_cost_flow.Head(arc) - self.n_rev
+                        self.solution[rev, pap] = 1.0
+                elif self.min_cost_flow.Flow(arc) > 0:
+                    print(self.min_cost_flow.Tail(arc), self.min_cost_flow.Head(arc))
             self.solved = True
         else:
             print('There was an issue with the min cost flow input.')
@@ -225,8 +318,19 @@ if __name__ == '__main__':
                     [1, 1, 0],
                     [1, 0, 1],
                     [0, 0, 1]])
-    m = ResidFlow(np.array([3, 3, 3, 3]), np.array([4, 4, 4]), costs, 1.2, sol)
-    g1, g2, g3 = m._group_papers()
-    m._construct_reassignment_network(g1, g2, g3)
-    m.solve()
+    m = ResidFlow(np.array([2, 2, 2, 2]), np.array([2, 2, 2]), costs, 1.2, sol)
+    g1, g2, g3 = m._grp_paps_by_ms()
+    m._construct_ms_improvement_network(g1, g2, g3)
+    m.solve_ms_improvement()
+    print(m.sol_as_mat())
+    m._refresh_internal_vars()
+    w_revs, w_paps = m._worst_reviewer(g3)
+    m.solution[w_revs, w_paps] = 0.0
+    g1, _, _ = m._grp_paps_by_cov()
+    m._construct_sol_validifier_network(g1)
+    print(m.start_inds)
+    print(m.end_inds)
+    print(m.caps)
+    print(m.costs)
+    m.solve_validifier()
     print(m.sol_as_mat())
