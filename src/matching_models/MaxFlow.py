@@ -63,8 +63,6 @@ class MaxFlowMinCost(object):
         self.supplies[self.source] = int(sum(self.coverages))
         self.supplies[self.sink] = int(-sum(self.coverages))
 
-        print(sum(self.coverages), sum(self.loads))
-
         for i in range(len(self.start_inds)):
             self.min_cost_flow.AddArcWithCapacityAndUnitCost(
                 self.start_inds[i], self.end_inds[i], self.caps[i],
@@ -75,8 +73,8 @@ class MaxFlowMinCost(object):
     def solve(self):
         """Solve matching."""
         if self.min_cost_flow.Solve() == self.min_cost_flow.OPTIMAL:
-            print('Total cost = ', self.min_cost_flow.OptimalCost())
-            print()
+            # print('Total cost = ', self.min_cost_flow.OptimalCost())
+            # print()
             for arc in range(self.min_cost_flow.NumArcs()):
                 # Can ignore arcs leading out of source or into sink.
                 if self.min_cost_flow.Tail(arc) != self.source and \
