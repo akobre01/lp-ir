@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # compute entropy
     entr = sc.entropy(n, base=2)
     outfile = open(os.path.join(args.input, 'entropy.txt'), 'w')
-    outfile.write(entr)
+    outfile.write(str(entr))
     outfile.close()
 
     max_height = max(n)

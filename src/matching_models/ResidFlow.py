@@ -310,7 +310,8 @@ class ResidFlow(object):
                         rev = self.min_cost_flow.Tail(arc)
                         pap = self.min_cost_flow.Head(arc) - self.n_rev
                         assert(self.solution[rev, pap] == 0.0)
-                        assert(np.sum(self.solution[:, pap], axis=0) == self.coverages[pap] - 1)
+                        assert(np.sum(self.solution[:, pap], axis=0) ==
+                               self.coverages[pap] - 1)
                         self.solution[rev, pap] = 1.0
             assert (np.sum(self.solution) == np.sum(self.coverages))
             self.valid = True
@@ -327,7 +328,7 @@ class ResidFlow(object):
 
     def try_improve_ms(self):
         paper_scores = np.sum(self.solution * self.weights, axis=0)
-        print("MAKESPAN %s" % min(paper_scores))
+        # print("MAKESPAN %s" % min(paper_scores))
         self._refresh_internal_vars()
         assert (np.sum(self.solution) == np.sum(self.coverages))
         g1, g2, g3 = self._grp_paps_by_ms()
@@ -348,7 +349,7 @@ class ResidFlow(object):
             self.solve_validifier()
             assert (np.sum(self.solution) == np.sum(self.coverages))
             paper_scores = np.sum(self.solution * self.weights, axis=0)
-            print("MAKESPAN %s" % min(paper_scores))
+            # print("MAKESPAN %s" % min(paper_scores))
             return True
         else:
             return False
