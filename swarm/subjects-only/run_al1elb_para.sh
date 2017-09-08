@@ -15,10 +15,6 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=7
-LOAD_LB=4
-COVERAGE=3
-
 for gap in `seq 0.05 0.05 0.05`
 do
     for expert in `seq 0 0.1 1.0`

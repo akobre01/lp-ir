@@ -2,14 +2,11 @@
 
 source `pwd`/swarm/setup.sh
 
-LOAD=7
-COV=3
-LB=4
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
-ASSIGNMENTS="${PM_ROOT}/results/${DATA_NAME}-load=${LOAD}-cov=${COV}-loadlb=${LB}"
+ASSIGNMENTS="${PM_ROOT}/results/${DATA_NAME}-load=${LOAD}-cov=${COVERAGE}-loadlb=${LOAD_LB}"
 
 # Run the basic lp formulation of paper matching.
-sbatch $PM_ROOT/bin/util/run_plot_survival.sh $ASSIGNMENTS $DATASET $COV
+sbatch $PM_ROOT/bin/util/run_plot_survival.sh $ASSIGNMENTS $DATASET $COVERAGE
 
 exit

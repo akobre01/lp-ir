@@ -15,10 +15,6 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=7
-LOAD_LB=4
-COVERAGE=3
-
 # Run the basic lp formulation of paper matching.
 sbatch $PM_ROOT/bin/cvpr/run_basic_lb.sh $DATA_NAME $DATASET $LOAD $LOAD_LB $COVERAGE $ms $gap
 

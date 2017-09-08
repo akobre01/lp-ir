@@ -15,10 +15,6 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=17
-COVERAGE=7
-ALG="da"
-
 for ms in `seq 0 0.5 ${COVERAGE}`
 do
     # Run the basic lp formulation of paper matching.

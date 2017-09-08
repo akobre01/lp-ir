@@ -15,8 +15,6 @@ source `pwd`/swarm/setup.sh
 DATA_NAME="subjects-only"
 DATASET="data/cvpr/subjects-only.npy"
 
-LOAD=17
-COVERAGE=7
 ALG="ir"
 
 for ms in `seq 0 0.5 ${COVERAGE}`
