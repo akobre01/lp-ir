@@ -40,7 +40,6 @@ if __name__ == "__main__":
     bm = MaxFlowMinCost([max_load] * n_rev, [coverage] * n_pap, weights)
     s = time.time()
     bm.solve()
-    t = time.time() - s
     rf = ResidFlow(np.array([max_load] * n_rev), np.array([coverage] * n_pap),
                    weights, ms, bm.sol_as_mat())
     can_improve = rf.try_improve_ms()
