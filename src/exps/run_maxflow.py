@@ -41,7 +41,6 @@ if __name__ == "__main__":
     s = time.time()
     bm.solve()
     t = time.time() - s
-    print('INITIAL SOLVE: %s' % t)
     rf = ResidFlow(np.array([max_load] * n_rev), np.array([coverage] * n_pap),
                    weights, ms, bm.sol_as_mat())
     can_improve = rf.try_improve_ms()
@@ -49,7 +48,6 @@ if __name__ == "__main__":
     while can_improve:
         can_improve = rf.try_improve_ms()
         num_itrs += 1
-        print('NUM ITRS %d' % num_itrs)
 
     t = time.time() - s
     f = open(time_file, 'w')

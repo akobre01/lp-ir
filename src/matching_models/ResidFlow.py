@@ -327,8 +327,22 @@ class ResidFlow(object):
                 'before calling this function.')
 
     def try_improve_ms(self):
-        paper_scores = np.sum(self.solution * self.weights, axis=0)
-        # print("MAKESPAN %s" % min(paper_scores))
+        """Try to improve the minimum paper score.
+
+        Construct the refinement network (that routes assignments from the
+        group of papers with high paper score to low paper scores) and solve the
+        corresponding min cost flow problem. Then, remove the worst reviewer
+        from each paper with more than the required number of reviewers.
+        Finally, construct the validifier network to route available reviewers
+        to papers missing a reviewer.
+
+        Args:
+            None
+
+        Returns:
+            A boolean representing whether makespan was violated (within the
+            allowable approximation factor.
+        """
         self._refresh_internal_vars()
         assert (np.sum(self.solution) == np.sum(self.coverages))
         g1, g2, g3 = self._grp_paps_by_ms()
@@ -336,8 +350,8 @@ class ResidFlow(object):
             curr_assign = np.sum(self.solution)
             self._construct_ms_improvement_network(g1, g2, g3)
             self.solve_ms_improvement()
-            assert (np.sum(self.solution) == np.sum(self.coverages))
-            assert(np.sum(self.solution) == curr_assign)
+            # assert (np.sum(self.solution) == np.sum(self.coverages))
+            # assert(np.sum(self.solution) == curr_assign)
             self._refresh_internal_vars()
             w_revs, w_paps = self._worst_reviewer(g3)
             self.solution[w_revs, w_paps] = 0.0
@@ -347,9 +361,7 @@ class ResidFlow(object):
             g1, _, _ = self._grp_paps_by_cov()
             self._construct_sol_validifier_network(g1)
             self.solve_validifier()
-            assert (np.sum(self.solution) == np.sum(self.coverages))
-            paper_scores = np.sum(self.solution * self.weights, axis=0)
-            # print("MAKESPAN %s" % min(paper_scores))
+            # assert (np.sum(self.solution) == np.sum(self.coverages))
             return True
         else:
             return False
