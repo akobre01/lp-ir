@@ -42,6 +42,8 @@ if __name__ == "__main__":
 
     copy_source_to_dir(output_dir, config)
 
+    output_dir = os.path.join(output_dir, 'results')
+
     n_rev = np.size(scores, axis=0)
     n_pap = np.size(scores, axis=1)
 
