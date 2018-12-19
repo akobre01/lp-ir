@@ -346,6 +346,7 @@ class ResidFlow(object):
         self._refresh_internal_vars()
         assert (np.sum(self.solution) == np.sum(self.coverages))
         g1, g2, g3 = self._grp_paps_by_ms()
+        print(np.size(g1), np.size(g3))
         if np.size(g1) > 0 and np.size(g3) > 0:
             curr_assign = np.sum(self.solution)
             self._construct_ms_improvement_network(g1, g2, g3)
