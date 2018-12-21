@@ -24,33 +24,35 @@ if __name__ == '__main__':
     [0, max_score].
     """
     parser = argparse.ArgumentParser(description='Plot survival of models.')
-    parser.add_argument('config_dir', type=str, help='path to exp_out config')
+    parser.add_argument('config_dirs', type=str, nargs='+',
+                        help='path to exp_out config')
     args = parser.parse_args()
 
-    config = Config(os.path.join(args.config_dir, 'config.json'))
-    scores = np.load(config.score_f)
+    config_dirs = args.config_dirs
 
-    assignment = np.load(os.path.join(args.config_dir, 'results',
-                                      'assignment.npy'))
-
-    num_quantiles = 5
-    match_scores = np.sum(assignment * scores, axis=0)
-    sorted_scores = sorted(match_scores)
-    num_papers = np.size(sorted_scores)
-    scores_per_quant = int(np.floor(num_papers / num_quantiles) + 1)
     quants = []
-    for i in range(num_quantiles):
-        if i != num_quantiles - 1:
-            quants.append(
-                sorted_scores[i * scores_per_quant: (i + 1) * scores_per_quant])
-        else:
-            quants.append(sorted_scores[i * scores_per_quant:])
+    labels = []
+    for config_dir in config_dirs:
+        config = Config(os.path.join(config_dir, 'config.json'))
+        scores = np.load(config.score_f)
+
+        assignment = np.load(os.path.join(config_dir, 'results',
+                                          'assignment.npy'))
+
+        num_quantiles = 5
+        match_scores = np.sum(assignment * scores, axis=0)
+        sorted_scores = sorted(match_scores)
+        num_papers = np.size(sorted_scores)
+        scores_per_quant = int(np.floor(num_papers / num_quantiles) + 1)
+        quants.append(sorted_scores[0: scores_per_quant])
+        labels.append(config.makespan)
 
     fig, ax = plt.subplots(1, 1)
     ax.boxplot(quants, 0, 'rx')
-    ax.set_title('Resid, Makespan=%s' % config.makespan)
+    plt.xticks(list(range(1, len(labels) + 1)), labels)
+    ax.set_title('Makespan vs. Lowest Quintile')
     ax.set_ylabel('Paper Assignment Score')
-    ax.set_xlabel('Quintile')
+    ax.set_xlabel('Makespan')
     ax.set_ylim(bottom=0.0)
     leg = ax.legend(loc='upper right', frameon=False)
 
@@ -71,4 +73,4 @@ if __name__ == '__main__':
         l.set_color(LABEL_COLOR)
     for l in leg.get_texts():
         l.set_color(LABEL_COLOR)
-    fig.savefig('/tmp/box.png')
+    fig.savefig('/tmp/lowest-box.png')

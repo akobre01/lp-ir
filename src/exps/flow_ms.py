@@ -57,12 +57,14 @@ if __name__ == "__main__":
     s = time.time()
     bm.solve()
     rf = ResidFlow(loads, covs, scores, ms, bm.sol_as_mat())
-    can_improve = rf.try_improve_ms()
+    can_improve, s1, s3 = rf.try_improve_ms()
     print('can improve')
     print(can_improve)
     num_itrs = 0
-    while can_improve:
-        can_improve = rf.try_improve_ms()
+    prev_s1, prev_s3 = -1, -1
+    while can_improve and (prev_s1 != s1 or prev_s3 != s3):
+        prev_s1, prev_s3 = s1, s3
+        can_improve, s1, s3 = rf.try_improve_ms()
         num_itrs += 1
 
     t = time.time() - s

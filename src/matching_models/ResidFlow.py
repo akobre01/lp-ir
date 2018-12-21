@@ -363,9 +363,9 @@ class ResidFlow(object):
             self._construct_sol_validifier_network(g1)
             self.solve_validifier()
             # assert (np.sum(self.solution) == np.sum(self.coverages))
-            return True
+            return True, np.size(g1), np.size(g3)
         else:
-            return False
+            return False, np.size(g1), np.size(g3)
 
 if __name__ == '__main__':
     costs = np.array([[.1, .9, .3],
