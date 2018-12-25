@@ -1,4 +1,4 @@
-"""Run the resid matcher using a max flow min cost implementation."""
+"""Run the basic matcher us LP solver."""
 import argparse
 import datetime
 import numpy as np
@@ -6,15 +6,14 @@ import os
 import random
 import time
 
-from matching_models.MaxFlow import MaxFlowMinCost
-from matching_models.ResidFlow import ResidFlow
+from matching_models.IRMakespanMatcher import IRMakespanMatcher
 
 from utils.Config import Config
 from utils.IO import mkdir_p, copy_source_to_dir
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Run the min cost flow matcher with makespan.')
+        description='Solve basic paper matching formulation as LP.')
     parser.add_argument('config', type=str, help='config file.')
 
     args = parser.parse_args()
@@ -35,6 +34,7 @@ if __name__ == "__main__":
     debug = config.debug
 
     # Set up output dir
+    assert(config.match_model == 'ir')
     config.experiment_out_dir = os.path.join(
         config.experiment_out_dir, config.dataset_name, config.match_model,
         'ms=%s' % config.makespan, ts)
@@ -53,22 +53,13 @@ if __name__ == "__main__":
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
 
-    bm = MaxFlowMinCost(loads, covs, scores)
+    bm = IRMakespanMatcher(loads, covs, scores, makespan=ms)
     s = time.time()
-    bm.solve()
-    rf = ResidFlow(loads, covs, scores, ms, bm.sol_as_mat())
-    can_improve, s1, s3 = rf.try_improve_ms()
-    print('can improve')
-    print(can_improve)
-    num_itrs = 0
-    prev_s1, prev_s3 = -1, -1
-    while can_improve and (prev_s1 != s1 or prev_s3 != s3):
-        prev_s1, prev_s3 = s1, s3
-        can_improve, s1, s3 = rf.try_improve_ms()
-        num_itrs += 1
+    bm.change_makespan(ms)
+    bm.round_fractional()
 
     t = time.time() - s
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()
-    np.save(assignment_file, rf.sol_as_mat())
+    np.save(assignment_file, bm.sol_as_mat())
