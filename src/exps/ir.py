@@ -55,8 +55,9 @@ if __name__ == "__main__":
 
     bm = IRMakespanMatcher(loads, covs, scores, makespan=ms)
     s = time.time()
-    bm.change_makespan(ms)
-    bm.round_fractional()
+    bm.solve()
+    # bm.change_makespan(ms)
+    # bm.round_fractional()
 
     t = time.time() - s
     f = open(time_file, 'w')
