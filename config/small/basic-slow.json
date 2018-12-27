@@ -1,0 +1,12 @@
+{
+  "dataset_name": "small",
+  "match_model": "basic-slow",
+  "score_f": "data/small/scores.npy",
+  "cov_f": "data/small/covs.npy",
+  "load_f": "data/small/loads.npy",
+  "makespan": 0.0,
+  "experiment_out_dir": "exp_out",
+  "random_seed": 2139,
+  "threads": 12,
+  "debug": false
+}
