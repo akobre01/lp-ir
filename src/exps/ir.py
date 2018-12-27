@@ -63,4 +63,9 @@ if __name__ == "__main__":
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()
+
+    makespan_file = os.path.join(output_dir, 'makespan.tsv')
+    with open(makespan_file, 'w') as f:
+        f.write('%s' % bm.makespan)
+
     np.save(assignment_file, bm.sol_as_mat())

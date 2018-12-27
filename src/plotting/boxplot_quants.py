@@ -32,7 +32,13 @@ if __name__ == '__main__':
 
     assignment = np.load(os.path.join(args.config_dir, 'results',
                                       'assignment.npy'))
+    makespan_f = os.path.join(args.config_dir, 'results', 'makespan.tsv')
 
+    if os.path.exists(makespan_f):
+        with open(makespan_f, 'r') as f:
+            makespan = float(f.read())
+    else:
+        makespan = None
     num_quantiles = 5
     match_scores = np.sum(assignment * scores, axis=0)
     sorted_scores = sorted(match_scores)
@@ -48,7 +54,10 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1, 1)
     ax.boxplot(quants, 0, 'rx')
-    ax.set_title('Resid, Makespan=%s' % config.makespan)
+    if makespan is None:
+        ax.set_title('%s' % config.match_model)
+    else:
+        ax.set_title('%s, Makespan=%.3f' % (config.match_model, makespan))
     ax.set_ylabel('Paper Assignment Score')
     ax.set_xlabel('Quintile')
     ax.set_ylim(bottom=0.0)
