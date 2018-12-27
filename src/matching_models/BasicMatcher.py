@@ -25,10 +25,10 @@ class BasicMatcher(object):
         """
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
-        self.loads = loads
-        self.coverages = coverages
+        self.loads = list(loads)
+        self.coverages = list(coverages)
 
-        assert(np.sum(coverages) < np.sum(loads))
+        assert(np.sum(coverages) <= np.sum(loads))
 
         self.weights = weights
         self.id = uuid.uuid4()
@@ -47,7 +47,7 @@ class BasicMatcher(object):
 
         # Objective.
         start = time.time()
-        coeff = self.weights.flatten()
+        coeff = list(self.weights.flatten())
         print('flatten %s' % (time.time() - start))
 
         start = time.time()

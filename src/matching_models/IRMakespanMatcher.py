@@ -110,6 +110,41 @@ class IRMakespanMatcher(MakespanMatcher):
         self.lp_vars[i][j].ub = val
         self.lp_vars[i][j].lb = val
 
+    def find_ms(self):
+        """Find an the highest possible makespan.
+
+        Perform a binary search on the makespan value. Each time, solve the
+        makespan LP without the integrality constraint. If we can find a
+        fractional value to one of these LPs, then we can round it.
+
+        Args:
+            None
+
+        Return:
+            Highest feasible makespan value found.
+        """
+        mn = 0.0
+        mx = np.max(self.weights) * np.max(self.coverages)
+        ms = mx
+        best = None
+        self.change_makespan(ms)
+        self.m.optimize()
+        for i in range(10):
+            print('ITERATION %s ms %s' % (i, ms))
+            if self.m.status == GRB.INFEASIBLE:
+                mx = ms
+                ms -= (ms - mn) / 2.0
+            else:
+                assert(best is None or ms > best)
+                assert(self.m.status == GRB.OPTIMAL)
+                best = ms
+                mn = ms
+                ms += (mx - ms) / 2.0
+            self.change_makespan(ms)
+            self.m.optimize()
+        print('Best found %s' % best)
+        return best
+
     # find an appropriate makespan using binary search and solve
     def solve(self, mn=0, mx=-1, itr=10, log_file=None):
         """Find a makespan and solve the ILP.
@@ -135,7 +170,10 @@ class IRMakespanMatcher(MakespanMatcher):
         if mx <= 0:
             mx = np.max(self.loads) * np.max(self.weights)
 
-        self.find_makespan_bin(mn, mx, itr, log_file)
+        ms = self.find_ms()
+        self.change_makespan(ms)
+        # self.find_makespan_bin(mn, mx, itr, log_file)
+
         begin_opt = time.time()
         self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1, log_file)
         end_opt = time.time()

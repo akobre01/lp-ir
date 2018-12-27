@@ -28,7 +28,7 @@ class BasicMatcherSlow(object):
         self.loads = loads
         self.coverages = coverages
 
-        assert(np.sum(coverages) < np.sum(loads))
+        assert(np.sum(coverages) <= np.sum(loads))
 
         self.weights = weights
         self.id = uuid.uuid4()
