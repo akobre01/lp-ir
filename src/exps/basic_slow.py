@@ -6,7 +6,7 @@ import os
 import random
 import time
 
-from matching_models.BasicMatcher import BasicMatcher
+from matching_models.BasicMatcherSlow import BasicMatcherSlow
 
 from utils.Config import Config
 from utils.IO import mkdir_p, copy_source_to_dir
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     debug = config.debug
 
     # Set up output dir
-    assert(config.match_model == 'basic-lp')
+    assert(config.match_model == 'basic-slow')
     config.experiment_out_dir = os.path.join(
         config.experiment_out_dir, config.dataset_name, config.match_model,
         'ms=%s' % config.makespan, ts)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
 
-    bm = BasicMatcher(loads, covs, scores)
+    bm = BasicMatcherSlow(loads, covs, scores)
     s = time.time()
     bm.solve()
     t = time.time() - s

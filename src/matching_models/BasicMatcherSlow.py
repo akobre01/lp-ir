@@ -5,7 +5,7 @@ import uuid
 from gurobipy import *
 
 
-class BasicMatcher(object):
+class BasicMatcherSlow(object):
     """The basic paper matching formulation"""
     # TODO(AK): We should add reviewer lower bounds to this.
     def __init__(self, loads, coverages, weights):
@@ -38,38 +38,38 @@ class BasicMatcher(object):
 
         self.m.setParam('OutputFlag', 0)
 
-        # Primal vars.
+        # primal variables
         start = time.time()
-        self.lp_vars = self.m.addVars(self.n_rev, self.n_pap, vtype=GRB.BINARY,
-                                      name='x')
+        self.lp_vars = []
+        for i in range(self.n_rev):
+            self.lp_vars.append([])
+            for j in range(self.n_pap):
+                self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
+                                                     name=self.var_name(i, j)))
         self.m.update()
-        print('Time to add vars %s' % (time.time() - start))
+        print('Set variables %s' % (time.time() - start))
 
-        # Objective.
+        # Set the objective.
         start = time.time()
-        coeff = self.weights.flatten()
-        print('flatten %s' % (time.time() - start))
-
-        start = time.time()
-        coeff = dict(zip(self.lp_vars.keys(), coeff))
-        print('zip %s' % (time.time() - start))
-
-        start = time.time()
-        obj = self.lp_vars.prod(coeff)
-        print('prod %s' % (time.time() - start))
-
-        start = time.time()
+        obj = LinExpr()
+        for i in range(self.n_rev):
+            for j in range(self.n_pap):
+                obj += self.weights[i][j] * self.lp_vars[i][j]
         self.m.setObjective(obj, GRB.MAXIMIZE)
-        print('Time to set objective %s' % (time.time() - start))
+        print('Objective %s' % (time.time() - start))
 
-        # Constraints.
         start = time.time()
-        self.m.addConstrs((self.lp_vars.sum(r, '*') <= l
-                           for r, l in enumerate(self.loads)))
-        self.m.addConstrs((self.lp_vars.sum('*', p) == c
-                           for p, c in enumerate(self.coverages)))
+        # Reviewer constraints.
+        for r, l in enumerate(self.loads):
+            self.m.addConstr(sum(self.lp_vars[r]) <= l, "r" + str(r))
+
+        # Paper constraints.
+        for p, cov in enumerate(self.coverages):
+            self.m.addConstr(sum([self.lp_vars[i][p]
+                                  for i in range(self.n_rev)]) == cov,
+                             "p" + str(p))
         self.m.update()
-        print('Time to add constraints %s' % (time.time() - start))
+        print('Constraints %s' % (time.time() - start))
 
     @staticmethod
     def var_name(i, j):
@@ -127,15 +127,12 @@ class BasicMatcher(object):
 
     def sol_as_mat(self):
         if self.m.status == GRB.OPTIMAL or self.m.status == GRB.SUBOPTIMAL:
-            # solution = np.zeros((self.n_rev, self.n_pap))
-            # for v in self.m.getVars():
-            #     i, j = self.indices_of_var(v)
-            #     solution[i, j] = v.x
-            if self.solution is None:
-                self.solution = np.zeros((self.n_rev, self.n_pap))
-            for key, var in self.lp_vars.items():
-                self.solution[key[0], key[1]] = var.x
-            return self.solution
+            solution = np.zeros((self.n_rev, self.n_pap))
+            for v in self.m.getVars():
+                i, j = self.indices_of_var(v)
+                solution[i, j] = v.x
+            self.solution = solution
+            return solution
         else:
             raise Exception(
                 'You must have solved the model optimally or suboptimally '
