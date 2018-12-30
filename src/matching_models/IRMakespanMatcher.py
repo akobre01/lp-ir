@@ -45,7 +45,7 @@ class IRMakespanMatcher(MakespanMatcher):
         self.weights = weights
         self.id = uuid.uuid4()
         self.m = Model("%s : IRMakespan" % str(self.id))
-        self.makespan = makespan
+        self.makespan = makespan or 0.0
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)

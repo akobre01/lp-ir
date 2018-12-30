@@ -1,4 +1,4 @@
-"""Run the basic matcher us LP solver."""
+"""Run the makespan matcher using ILP solver."""
 import argparse
 import datetime
 import numpy as np
@@ -6,7 +6,8 @@ import os
 import random
 import time
 
-from matching_models.BasicMatcher import BasicMatcher
+from matching_models.MakespanMatcher import MakespanMatcher
+from matching_models.MLLB import MLLB
 
 from utils.Config import Config
 from utils.IO import mkdir_p, copy_source_to_dir
@@ -26,7 +27,7 @@ if __name__ == "__main__":
         loads_lb = np.load(config.load_lb_f)
     else:
         loads_lb = None
-    ms = 0.0
+    ms = config.makespan
 
     now = datetime.datetime.now()
     ts = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(
@@ -38,8 +39,9 @@ if __name__ == "__main__":
     debug = config.debug
 
     # Set up output dir
-    assert(config.match_model == 'basic' or
-           config.match_model == 'basic-lb')
+    assert (config.match_model == 'bb' or
+            config.match_model == 'bb-lb')
+
     config.experiment_out_dir = os.path.join(
         config.experiment_out_dir, config.dataset_name, config.match_model,
         'ms=%s' % config.makespan, ts)
@@ -58,12 +60,15 @@ if __name__ == "__main__":
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
 
-    bm = BasicMatcher(loads, covs, scores, loads_lb=loads_lb)
+    if loads_lb is not None:
+        bb = MLLB(loads, loads_lb, covs, scores, makespan=ms)
+    else:
+        bb = MakespanMatcher(loads, covs, scores, makespan=ms)
     s = time.time()
-    bm.solve()
-    t = time.time() - s
+    bb.solve()
 
+    t = time.time() - s
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()
-    np.save(assignment_file, bm.sol_as_mat())
+    np.save(assignment_file, bb.sol_as_mat())

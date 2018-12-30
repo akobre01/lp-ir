@@ -47,7 +47,7 @@ class MLLB(object):
         self.weights = weights
         self.id = uuid.uuid4()
         self.m = Model("%s: makespan matcher" % str(self.id))
-        self.makespan = makespan     # the minimum allowable paper score.
+        self.makespan = makespan or 0.0  # the minimum allowable paper score.
         # TODO(AK): can we make a makespan constraint per paper?
         self.solution = None
 
@@ -111,6 +111,37 @@ class MLLB(object):
                              self.ms_constr_prefix + str(p))
         self.makespan = new_makespan
         self.m.update()
+
+    def find_ms(self):
+        """Find an the highest possible makespan using binary search.
+
+        Args:
+            None
+
+        Return:
+            Highest feasible makespan value found.
+        """
+        mn = 0.0
+        mx = np.max(self.weights) * np.max(self.coverages)
+        ms = mx
+        best = None
+        self.change_makespan(ms)
+        self.m.optimize()
+        for i in range(10):
+            print('ITERATION %s ms %s' % (i, ms))
+            if self.m.status == GRB.INFEASIBLE:
+                mx = ms
+                ms -= (ms - mn) / 2.0
+            else:
+                assert(best is None or ms > best)
+                assert(self.m.status == GRB.OPTIMAL)
+                best = ms
+                mn = ms
+                ms += (mx - ms) / 2.0
+            self.change_makespan(ms)
+            self.m.optimize()
+        print('Best found %s' % best)
+        return best
 
     def find_makespan_bin(self, mn=0, mx=-1, itr=10, log_file=None):
         """Use a binary search to find a feasible makespan.
@@ -237,8 +268,9 @@ class MLLB(object):
         if mx <= 0:
             mx = np.max(self.loads) * np.max(self.weights)
 
-        self.find_makespan_bin(mn, mx, itr, log_file)
-
+        # self.find_makespan_bin(mn, mx, itr, log_file)
+        ms = self.find_ms()
+        self.change_makespan(ms)
         begin_opt = time.time()
         self.m.optimize()
         end_opt = time.time()

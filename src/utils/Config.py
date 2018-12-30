@@ -30,6 +30,7 @@ class Config(object):
         self.score_f = None
         self.cov_f = None
         self.load_f = None
+        self.load_lb_f = None
 
         # Params
         self.makespan = None

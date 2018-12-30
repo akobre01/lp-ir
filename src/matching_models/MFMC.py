@@ -57,82 +57,54 @@ class MFMC(object):
         """
         rev_pots = np.ones(self.n_rev) * np.inf
         pap_pots = np.ones(self.n_pap) * np.inf
-        rev_pots2 = np.ones(self.n_rev) * np.inf
-        pap_pots2 = np.ones(self.n_pap) * np.inf
         sink_pot = np.inf
-        sink_pot2 = np.inf
 
         # Precomute values.
-        src_fc = np.maximum(0, (1.0 - self.src_caps) * np.inf)
+        src_fc = (self.src_caps == 0).astype(int) * np.inf
         src_fc[np.isnan(src_fc)] = 0
         fwd_edges = self.assign * np.inf  # returns inf if already assigned.
         fwd_edges[np.isnan(fwd_edges)] = 0
-        bwd_edges = (self.assign - 1.0) * -np.inf #  inf is not assigned
+        bwd_edges = (self.assign == 0).astype(int) * np.inf
         bwd_edges[np.isnan(bwd_edges)] = 0
-        aug_fc = self.fwd_costs + fwd_edges
-        aug_bc = self.bwd_costs + bwd_edges
-        fwd_sink_edges = np.maximum(0, (1.0 - self.sink_caps)) * np.inf
+        aug_fc = 1.0 / self.weights + fwd_edges
+        aug_bc = bwd_edges
+        # aug_fc = self.fwd_costs + fwd_edges
+        # aug_bc = self.bwd_costs + bwd_edges
+        fwd_sink_edges = (self.sink_caps == 0).astype(int) * np.inf
         fwd_sink_edges[np.isnan(fwd_sink_edges)] = 0
-        bwd_sink_edges = np.maximum(0, self.sink_caps - np.array(self.coverages) + 1.0) * np.inf
+        bwd_sink_edges = (self.sink_caps == np.array(self.coverages)).astype(
+            int) * np.inf
         bwd_sink_edges[np.isnan(bwd_sink_edges)] = 0
 
-        # print(self.assign)
-        # print(self.fwd_costs)
-        # print(self.bwd_costs)
-        # print(src_fc)
         for i in range(self.n_rev + self.n_pap + 3):  # TODO: is it +1 or -1?
-            print(i)
-            # print(sink_pot, rev_pots, pap_pots)
-            # print(sink_pot2, rev_pots2, pap_pots2)
             # Costs from src.
-            new_rev_pots = np.minimum(rev_pots2, src_fc)
+            new_rev_pots = np.minimum(rev_pots, src_fc)
 
             # Backward costs from papers.
             new_rev_pots = np.minimum(new_rev_pots,
-                                      np.min(pap_pots2 + aug_bc, axis=1))
+                                      np.min(pap_pots + aug_bc, axis=1))
 
             # Forward costs from revs.
-            new_pap_pots = np.minimum(pap_pots2,
-                                      np.min(new_rev_pots[:, np.newaxis] + aug_fc, axis=0))
+            new_pap_pots = np.minimum(pap_pots,
+                                      np.min(new_rev_pots[:, np.newaxis] + \
+                                             aug_fc, axis=0))
 
             # Backwards costs from sink.
-            new_pap_pots = np.minimum(new_pap_pots, sink_pot2 + bwd_sink_edges)
+            new_pap_pots = np.minimum(new_pap_pots, sink_pot + bwd_sink_edges)
 
             # Costs to sink.
-            new_sink_pot = np.minimum(sink_pot2,
-                                      np.min(pap_pots2 + fwd_sink_edges))
+            new_sink_pot = np.minimum(sink_pot,
+                                      np.min(pap_pots + fwd_sink_edges))
 
-            if all(new_rev_pots == rev_pots2) and \
-                    all(new_pap_pots == pap_pots2) and \
-                            new_sink_pot == sink_pot2:
+            if all(new_rev_pots == rev_pots) and \
+                    all(new_pap_pots == pap_pots) and \
+                            new_sink_pot == sink_pot:
                 return new_rev_pots, new_pap_pots, new_sink_pot
             else:
-                rev_pots2 = new_rev_pots
-                pap_pots2 = new_pap_pots
-                sink_pot2 = new_sink_pot
-
-            # for rev in range(self.n_rev):
-            #     if self.src_caps[rev] > 0 and \
-            #                     rev_pots[rev] > self.src_fwd_costs[rev]:
-            #         rev_pots[rev] = self.src_fwd_costs[rev]
-            #     for pap in range(self.n_pap):
-            #         if self.assign[rev, pap] == 0:
-            #             edge_cost = self.fwd_costs[rev, pap]
-            #             if pap_pots[pap] > rev_pots[rev] + edge_cost:
-            #                 pap_pots[pap] = rev_pots[rev] + edge_cost
-            #         else: # assign[rev, pap] == 1
-            #             edge_cost = self.bwd_costs[rev, pap]
-            #             if rev_pots[rev] > pap_pots[pap] + edge_cost:
-            #                 rev_pots[rev] = pap_pots[pap] + edge_cost
-            #         if self.sink_caps[pap] > 0 and sink_pot > pap_pots[pap] \
-            #                         + self.sink_fwd_costs[pap]:
-            #             sink_pot = pap_pots[pap] + self.sink_fwd_costs[pap]
-            #         if self.sink_caps[pap] < self.coverages[pap] and \
-            #                         pap_pots[pap] > sink_pot \
-            #                         + self.sink_bwd_costs[pap]:
-            #             pap_pots[pap] = sink_pot + self.sink_bwd_costs[pap]
-        #return rev_pots, pap_pots, sink_pot
-        return rev_pots2, pap_pots2, sink_pot2
+                rev_pots = new_rev_pots
+                pap_pots = new_pap_pots
+                sink_pot = new_sink_pot
+        return rev_pots, pap_pots, sink_pot
 
     def reduce_costs(self, rev_pots, pap_pots, sink_pot):
         """Compute the reduced cost of every edge.
@@ -153,23 +125,41 @@ class MFMC(object):
         """
         rev_pot_mat = np.tile(rev_pots[:, np.newaxis], (1, self.n_pap))
         pap_pot_mat = np.tile(pap_pots, (self.n_rev, 1))
-        self.fwd_costs += (self.assign == 0).astype(int) * (rev_pot_mat - pap_pot_mat)
-        self.bwd_costs += (self.assign == 1).astype(int) * (pap_pot_mat - rev_pot_mat)
-        self.sink_fwd_costs += (self.sink_caps > 0).astype(int) * (
-        pap_pots - sink_pot)
-        self.sink_bwd_costs += (self.sink_caps == self.coverages).astype(int) * (pap_pots - sink_pot)
+        # TODO(AK): note sure which of the reduce costs is correct.
+        # self.fwd_costs += (self.assign == 0).astype(int) * (
+        #     rev_pot_mat - pap_pot_mat)
+        # self.bwd_costs += (self.assign == 1).astype(int) * (
+        #     pap_pot_mat - rev_pot_mat)
+        # self.sink_fwd_costs += (self.sink_caps > 0).astype(int) * (
+        #     pap_pots - sink_pot)
+        # self.sink_bwd_costs += (self.sink_caps < self.coverages).astype(int) \
+        #                        * (sink_pot - pap_pots)
+        fwd_inf = (self.assign == 1).astype(int) * np.inf
+        fwd_inf[np.isnan(fwd_inf)] = 0
+        bwd_inf = (self.assign == 0).astype(int) * np.inf
+        bwd_inf[np.isnan(bwd_inf)] = 0
+        sink_fwd_inf = (self.sink_caps == 0).astype(int) * np.inf
+        sink_fwd_inf[np.isnan(sink_fwd_inf)] = 0
+        sink_bwd_inf = (self.sink_caps == self.coverages).astype(int) * np.inf
+        sink_fwd_inf[np.isnan(sink_bwd_inf)] = 0
 
-        # for rev in range(self.n_rev):
-        #     for pap in range(self.n_pap):
-        #         if self.assign[rev, pap] == 0:
-        #             self.fwd_costs[rev, pap] += rev_pots[rev] - pap_pots[pap]
-        #         else:  #assign[rev, pap] == 1:
-        #             self.bwd_costs[rev, pap] += pap_pots[pap] - rev_pots[rev]
-        # for pap in range(self.n_pap):
-        #     if self.sink_caps[pap] > 0:
-        #         self.sink_fwd_costs[pap] += pap_pots[pap] - sink_pot
-        #     if self.sink_caps[pap] < self.coverages[pap]:
-        #         self.sink_bwd_costs[pap] += sink_pot - pap_pots[pap]
+        self.fwd_costs = (self.assign == 0).astype(int) * (
+            rev_pot_mat - pap_pot_mat + 1.0 / self.weights) + fwd_inf
+        self.bwd_costs = (self.assign == 1).astype(int) * (
+            pap_pot_mat - rev_pot_mat) + bwd_inf
+        self.sink_fwd_costs = (self.sink_caps > 0).astype(int) * (
+            pap_pots - sink_pot) + sink_fwd_inf
+        self.sink_bwd_costs = (self.sink_caps < self.coverages).astype(int) \
+                               * (sink_pot - pap_pots) + sink_bwd_inf
+        print(sink_pot)
+        print(rev_pots)
+        print(pap_pots)
+        print(sink_pot - pap_pots + sink_bwd_inf)
+        print(self.sink_caps)
+        assert ((self.fwd_costs >= 0).all())
+        assert ((self.bwd_costs >= 0).all())
+        assert ((self.sink_fwd_costs >= 0).all())
+        assert ((self.sink_bwd_costs >= 0).all())
 
     def augment_assign(self):
         """Augment the set of assignments.
@@ -205,22 +195,23 @@ class MFMC(object):
                     pap = pap[0]
                     pap_pars[pap] = rev
                     if self.sink_caps[pap] > 0:
-                        self.sink_caps[pap] -= 1
-
                         # Update everything along the path
                         p = pap
                         r = pap_pars[p]
-                        rp = rev_pars[r]
-                        if rp == -1:
-                            self.src_caps[r] -= 1  # revs par is the src.
                         self.assign[r, p] = 1
+                        self.sink_caps[pap] -= 1
+
+                        rp = rev_pars[r]
                         while rp != -1:   # src val.
                             p = rev_pars[r]
+                            assert(self.assign[r, p] == 1)
                             self.assign[r, p] = 0
                             r = pap_pars[p]
+                            assert(self.assign[r, p] == 0)
                             self.assign[r, p] = 1
                             rp = rev_pars[r]
-                            print(r, p, rp)
+                        assert(rp == -1)
+                        self.src_caps[r] -= 1  # revs par is the src.
                         return True
                     else:
                         pap_q.append(pap)
@@ -234,6 +225,8 @@ class MFMC(object):
                     r = r[0]
                     rev_q.append(r)
                     rev_pars[r] = pap
+        print(self.src_caps, np.sum(self.src_caps))
+        print(self.sink_caps, np.sum(self.sink_caps))
         return False
 
     def solve(self):
@@ -243,15 +236,14 @@ class MFMC(object):
 
         while found:
             revp, papp, sp = self.compute_potentials()
-            print("POTENTIALS COMPUTED")
             self.reduce_costs(revp, papp, sp)
-            print("COSTS REDUCED")
             found = self.augment_assign()
             another_aug_path = True
             while another_aug_path:
-                print('%s of %s' % (np.sum(self.assign), total))
+                s = np.sum(self.assign)
+                if s % 500 == 0:
+                    print('Assigned %s of %s' % (s, total))
                 another_aug_path = self.augment_assign()
-                print("AUGMENTED")
         self.solved = True
 
     def sol_as_mat(self):

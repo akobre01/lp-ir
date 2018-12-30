@@ -8,7 +8,7 @@ from gurobipy import *
 class BasicMatcher(object):
     """The basic paper matching formulation"""
     # TODO(AK): We should add reviewer lower bounds to this.
-    def __init__(self, loads, coverages, weights):
+    def __init__(self, loads, coverages, weights, loads_lb=None):
         """Initialize the BasicMatcher
 
         Args:
@@ -19,16 +19,21 @@ class BasicMatcher(object):
             weights - the affinity matrix (np.array) of papers to reviewers.
                    Rows correspond to reviewers and columns correspond to
                    papers.
+            loads_lb - a list of integers specifying the min number of papers
+                  for each reviewer (optional).
 
         Returns:
             initialized matcher.
         """
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
-        self.loads = list(loads)
-        self.coverages = list(coverages)
+        self.loads = loads
+        self.loads_lb = loads_lb
+        self.coverages = coverages
 
         assert(np.sum(coverages) <= np.sum(loads))
+        if loads_lb is not None:
+            assert(np.sum(coverages) >= np.sum(loads_lb))
 
         self.weights = weights
         self.id = uuid.uuid4()
@@ -68,6 +73,10 @@ class BasicMatcher(object):
                            for r, l in enumerate(self.loads)))
         self.m.addConstrs((self.lp_vars.sum('*', p) == c
                            for p, c in enumerate(self.coverages)))
+        if self.loads_lb is not None:
+            self.m.addConstrs((self.lp_vars.sum(r, '*') >= l
+                               for r, l in enumerate(self.loads_lb)))
+
         self.m.update()
         print('Time to add constraints %s' % (time.time() - start))
 
