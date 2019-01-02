@@ -6,7 +6,7 @@ from .MakespanMatcher import MakespanMatcher
 from gurobipy import *
 
 
-class IRDALB(MakespanMatcher):
+class IRLB(MakespanMatcher):
     """A Makespan paper matcher with iterative relaxation.
 
     """
@@ -270,7 +270,8 @@ class IRDALB(MakespanMatcher):
                             self.m.remove(c)
                             self.m.update()
                             print("REMOVED CONSTRAINT ON PAPER %s" % paper)
-
+                            return self.round_fractional(integral_assignments,
+                                                         log_file, count + 1)
             # If necessary remove a load constraint.
             for (rev, frac_vars) in frac_assign_r.items():
                 if len(frac_vars) == 2:
@@ -279,5 +280,6 @@ class IRDALB(MakespanMatcher):
                                 c.ConstrName == self.llb_constr_name(rev):
                             self.m.remove(c)
                     self.m.update()
-            return self.round_fractional(integral_assignments, log_file,
-                                         count + 1)
+                    return self.round_fractional(
+                        integral_assignments,
+                        log_file, count + 1)

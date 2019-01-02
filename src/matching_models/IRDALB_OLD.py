@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import time
 import uuid
@@ -7,17 +8,19 @@ from gurobipy import *
 
 
 class IRDALB(MakespanMatcher):
-    """A Makespan paper matcher with iterative relaxation.
+    """A Makespan paper matcher with iterative relaxation (drop all).
 
+       Virtually the same as the IR matcher but drops all constraints at each
+       iteration.
     """
 
-    def __init__(self, loads, loads_lb, coverages, weights, makespan=0):
+    def __init__(self, loads, load_lb, coverages, weights, makespan=0):
         """Initialize a makespan matcher
 
         Args:
             loads - a list of integers specifying the maximum number of papers
                   for each reviewer.
-            loads_lb - a list of ints specifying the minimum number of papers
+            load_lb - a list of integers specifying the minimum number of papers
                   for each reviewer.
             coverages - a list of integers specifying the number of reviews per
                  paper.
@@ -32,21 +35,20 @@ class IRDALB(MakespanMatcher):
         self.n_rev = np.size(weights, axis=0)
         self.n_pap = np.size(weights, axis=1)
         self.loads = loads
-        self.loads_lb = loads_lb
+        self.load_lb = load_lb
         self.coverages = coverages
         self.weights = weights
         self.id = uuid.uuid4()
         self.m = Model("%s : IRMakespan" % str(self.id))
-        self.makespan = makespan or 0.0
+        self.makespan = makespan
         self.solution = None
 
         self.m.setParam('OutputFlag', 0)
 
-        self.load_ub_name = 'lib'
-        self.load_lb_name = 'llb'
-        self.cov_name = 'cov'
-        self.ms_constr_prefix = 'ms'
-        self.round_constr_prefix = 'round'
+        self.ms_constr_prefix = "ms"
+        self.load_lb_constr_prefix = "llb"
+        self.load_ub_constr_prefix = "lub"
+        self.round_constr_prefix = "round"
 
         # primal variables
         self.lp_vars = []
@@ -64,44 +66,38 @@ class IRDALB(MakespanMatcher):
                 obj += self.weights[i][j] * self.lp_vars[i][j]
         self.m.setObjective(obj, GRB.MAXIMIZE)
 
-        # load upper bound constraints.
+        # Reviewer constraints.
         for r, load in enumerate(self.loads):
             self.m.addConstr(sum(self.lp_vars[r]) <= load,
-                             self.lub_constr_name(r))
+                             '%s%s' % (self.load_lb_constr_prefix, str(r)))
+        for r, load_lb in enumerate(self.load_lb):
+            self.m.addConstr(sum(self.lp_vars[r]) >= load_lb,
+                             '%s%s' % (self.load_ub_constr_prefix, str(r)))
 
-        # load load bound constraints.
-        for r, load in enumerate(self.loads_lb):
-            self.m.addConstr(sum(self.lp_vars[r]) >= load,
-                             self.llb_constr_name(r))
-
-        # coverage constraints.
+        # Paper constraints.
         for p, cov in enumerate(self.coverages):
             self.m.addConstr(sum([self.lp_vars[i][p]
                                   for i in range(self.n_rev)]) == cov,
-                             self.cov_constr_name(p))
+                             "p" + str(p))
 
-        # makespan constraints.
+        # Makespan constraints.
         for p in range(self.n_pap):
             self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]
                                   for i in range(self.n_rev)]) >= self.makespan,
-                             self.ms_constr_name(p))
+                             self.ms_constr_prefix + str(p))
         self.m.update()
 
-    def ms_constr_name(self, p):
-        """Name of the makespan constraint for paper p."""
-        return '%s%s' % (self.ms_constr_prefix, p)
+    def makespan_constr_name(self, p):
+        """Get the name of the makespan constraint for paper p."""
+        return self.ms_constr_prefix + str(p)
 
-    def lub_constr_name(self, r):
-        """Name of load upper bound constraint for reviewer r."""
-        return '%s%s' % (self.load_ub_name, r)
+    def load_lb_constr_name(self, r):
+        """Get the load constraints for reviewer r."""
+        return '%s%s' % (self.load_lb_constr_prefix, str(r))
 
-    def llb_constr_name(self, r):
-        """Name of load lower bound constraint for reviewer r."""
-        return '%s%s' % (self.load_lb_name, r)
-
-    def cov_constr_name(self, p):
-        """Name of coverage constraint for paper p."""
-        return '%s%s' % (self.cov_name, p)
+    def load_ub_constr_name(self, r):
+        """Get the load constraints for reviewer r."""
+        return '%s%s' % (self.load_ub_constr_prefix, str(r))
 
     def integral_sol_found(self):
         """Return true if all lp variables are integral."""
@@ -110,48 +106,13 @@ class IRDALB(MakespanMatcher):
                    sol[self.var_name(i, j)] == 0.0
                    for i in range(self.n_rev) for j in range(self.n_pap))
 
-    def fix_assignment(self, i, j, val, log_file=None):
+    def add_round_const(self, i, j, val, log_file=None):
         """Round the variable x_ij to val."""
         if log_file:
             logging.info("\tROUNDING (REVIEWER, PAPER) %s TO VAL: %s" % (
                  str((i, j)), str(val)))
         self.lp_vars[i][j].ub = val
         self.lp_vars[i][j].lb = val
-
-    def find_ms(self):
-        """Find an the highest possible makespan.
-
-        Perform a binary search on the makespan value. Each time, solve the
-        makespan LP without the integrality constraint. If we can find a
-        fractional value to one of these LPs, then we can round it.
-
-        Args:
-            None
-
-        Return:
-            Highest feasible makespan value found.
-        """
-        mn = 0.0
-        mx = np.max(self.weights) * np.max(self.coverages)
-        ms = mx
-        best = None
-        self.change_makespan(ms)
-        self.m.optimize()
-        for i in range(10):
-            print('ITERATION %s ms %s' % (i, ms))
-            if self.m.status == GRB.INFEASIBLE:
-                mx = ms
-                ms -= (ms - mn) / 2.0
-            else:
-                assert(best is None or ms > best)
-                assert(self.m.status == GRB.OPTIMAL)
-                best = ms
-                mn = ms
-                ms += (mx - ms) / 2.0
-            self.change_makespan(ms)
-            self.m.optimize()
-        print('Best found %s' % best)
-        return best
 
     # find an appropriate makespan using binary search and solve
     def solve(self, mn=0, mx=-1, itr=10, log_file=None):
@@ -174,23 +135,23 @@ class IRDALB(MakespanMatcher):
             if c.ConstrName.startswith(self.round_constr_prefix):
                 print("SURPRISE! REMOVING A CONSTRAINT: %s" % str(c))
                 self.m.remove(c)
-                assert(False)
 
-        ms = self.find_ms()
-        self.change_makespan(ms)
+        if mx <= 0:
+            mx = np.max(self.loads) * np.max(self.weights)
 
+        self.find_makespan_bin(mn, mx, itr, log_file)
         begin_opt = time.time()
         self.round_fractional(np.ones((self.n_rev, self.n_pap)) * -1, log_file)
         end_opt = time.time()
         if log_file:
-            logging.info('#solver-time\t%s' % (str(end_opt - begin_opt)))
+            logging.info("[SOLVER TIME]: %s" % (str(end_opt - begin_opt)))
 
         sol = {}
         for v in self.m.getVars():
             sol[v.varName] = v.x
 
         if log_file:
-            logging.info('#obj\t%f' % self.objective_val())
+            logging.info("[OBJ]: %f" % self.objective_val())
 
     def round_fractional(self, integral_assignments=None, log_file=None,
                          count=0):
@@ -217,8 +178,6 @@ class IRDALB(MakespanMatcher):
 
         self.m.optimize()
 
-        print("FINSHED OPTIMIZTION")
-
         if self.m.status != GRB.OPTIMAL and self.m.status != GRB.SUBOPTIMAL:
             assert False, '%s\t%s' % (self.m.status, self.makespan)
 
@@ -234,7 +193,6 @@ class IRDALB(MakespanMatcher):
             sol = self.sol_as_dict()
             fractional_vars = []
 
-            # Find fractional vars.
             for i in range(self.n_rev):
                 for j in range(self.n_pap):
                     if j not in frac_assign_p:
@@ -244,12 +202,12 @@ class IRDALB(MakespanMatcher):
 
                     if sol[self.var_name(i, j)] == 0.0 and \
                                     integral_assignments[i][j] != 0.0:
-                        self.fix_assignment(i, j, 0.0, log_file)
+                        self.add_round_const(i, j, 0.0, log_file)
                         integral_assignments[i][j] = 0.0
 
                     elif sol[self.var_name(i, j)] == 1.0 and \
                                     integral_assignments[i][j] != 1.0:
-                        self.fix_assignment(i, j, 1.0, log_file)
+                        self.add_round_const(i, j, 1.0, log_file)
                         integral_assignments[i][j] = 1.0
 
                     elif sol[self.var_name(i, j)] != 1.0 and \
@@ -262,22 +220,70 @@ class IRDALB(MakespanMatcher):
 
                         integral_assignments[i][j] = sol[self.var_name(i, j)]
 
-            # First try to elim a makespan constraint.
             for (paper, frac_vars) in frac_assign_p.items():
                 if len(frac_vars) == 2:
                     for c in self.m.getConstrs():
-                        if c.ConstrName == self.ms_constr_name(paper):
+                        if c.ConstrName == self.makespan_constr_name(paper):
+                            if log_file:
+                                logging.info('[REMOVED CONSTR NAME]: %s' %
+                                             str(c.ConstrName))
+                                logging.info(
+                                    '[REMOVED CONSTR PAPER]: %d' % paper)
+                                logging.info(
+                                    '[REMOVED ON ITERATION]: %d' % count)
                             self.m.remove(c)
-                            self.m.update()
-                            print("REMOVED CONSTRAINT ON PAPER %s" % paper)
 
-            # If necessary remove a load constraint.
             for (rev, frac_vars) in frac_assign_r.items():
                 if len(frac_vars) == 2:
                     for c in self.m.getConstrs():
-                        if c.ConstrName == self.lub_constr_name(rev) or \
-                                c.ConstrName == self.llb_constr_name(rev):
+                        if c.ConstrName == self.load_lb_constr_name(rev) \
+                                or c.ConstrName == self.load_ub_constr_name(rev):
+                            if log_file:
+                                logging.info(
+                                    '[REMOVED CONSTR NAME]: %s' %
+                                    str(c.ConstrName))
+                                logging.info(
+                                    '[REMOVED CONSTR LOAD]: %d' % rev)
+                                logging.info(
+                                    '[REMOVED ON ITERATION]: %d' % count)
                             self.m.remove(c)
-                    self.m.update()
-            return self.round_fractional(integral_assignments, log_file,
-                                         count + 1)
+        self.m.update()
+        return self.round_fractional(integral_assignments, log_file, count + 1)
+
+    # THIS METHOD IS BROKEN NOW
+    def count_tight_rev_constr(self, sol):
+        """Return the number of tight reviewer load constraints."""
+        tight = 0
+        for i in range(self.n_rev):
+            assignment_count = 0
+            for j in range(self.n_pap):
+                assignment_count += sol[self.var_name(i, j)]
+            if assignment_count == self.alpha:
+                tight += 1
+        return tight
+
+    def count_revs_with_zero_assigned(self, sol):
+        """Return the number of reviewers without any assignments."""
+        zero = 0
+        for i in range(self.n_rev):
+            assignment_count = 0
+            for j in range(self.n_pap):
+                assignment_count += sol[self.var_name(i,j)]
+            if assignment_count == 0:
+                zero += 1
+        return zero
+
+if __name__ == "__main__":
+    ws = np.genfromtxt(
+        'data/train/200-200-2.0-5.0-skill_based/weights.txt')
+    a = [3] * np.size(ws, axis=0)
+    b = [3] * np.size(ws, axis=1)
+
+    init_makespan = 0.0
+
+    x = IRDALB(a, a, b, ws, init_makespan)
+    s = time.time()
+    x.round_fractional()
+
+    print(time.time() - s)
+    print("[done.]")
