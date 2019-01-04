@@ -215,7 +215,7 @@ class MsFlowLB(object):
             self.start_inds.append(self.n_rev + pap)
             self.end_inds.append(rev)
             self.caps.append(1)
-            # self.costs.append(int(-1.0 + 10000 * self.weights[rev, pap]))
+            # self.costs.append(int(1.0 + 10000 * self.weights[rev, pap]))
             self.costs.append(1)
 
             # and now connect this reviewer to each paper in g2 if that
@@ -241,7 +241,7 @@ class MsFlowLB(object):
             self.start_inds.append(self.n_rev + pap)
             self.end_inds.append(rev)
             self.caps.append(1)
-            # self.costs.append(int(-1.0 + 10000 * self.weights[rev, pap2]))
+            # self.costs.append(int(1.0 + 10000 * self.weights[rev, pap]))
             self.costs.append(1)
             # TODO(AK): below??
             # self.costs.append(0)

@@ -11,11 +11,6 @@ from plotting.plotting_style import MODEL_TO_COLOR, BORDER_COLOR, LABEL_COLOR
 from utils.Config import Config
 
 
-def read_files_with_prefix(d, pre):
-    """Read the files in directory d with prefix pre."""
-    return [f for f in os.listdir(d) if f.startswith(pre)]
-
-
 if __name__ == '__main__':
     """A script that reads from a results dir and generates a survival plot.
 
