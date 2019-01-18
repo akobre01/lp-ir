@@ -1,6 +1,6 @@
 {
   "dataset_name": "cvpr2018",
-  "match_model": "basic-lb",
+  "match_model": "basic-slow",
   "score_f": "data/cvpr2018/scores.npy",
   "cov_f": "data/cvpr2018/covs.npy",
   "load_f": "data/cvpr2018/loads.npy",

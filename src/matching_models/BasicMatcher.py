@@ -45,27 +45,32 @@ class BasicMatcher(object):
 
         # Primal vars.
         start = time.time()
+        coeff = list(self.weights.flatten())
+        print('flatten %s' % (time.time() - start))
         self.lp_vars = self.m.addVars(self.n_rev, self.n_pap, vtype=GRB.BINARY,
-                                      name='x')
+                                      name='x', obj=coeff)
         self.m.update()
         print('Time to add vars %s' % (time.time() - start))
 
         # Objective.
-        start = time.time()
-        coeff = list(self.weights.flatten())
-        print('flatten %s' % (time.time() - start))
+        self.m.setObjective(self.m.getObjective(), GRB.MAXIMIZE)
+        self.m.update()
 
-        start = time.time()
-        coeff = dict(zip(self.lp_vars.keys(), coeff))
-        print('zip %s' % (time.time() - start))
-
-        start = time.time()
-        obj = self.lp_vars.prod(coeff)
-        print('prod %s' % (time.time() - start))
-
-        start = time.time()
-        self.m.setObjective(obj, GRB.MAXIMIZE)
-        print('Time to set objective %s' % (time.time() - start))
+        # start = time.time()
+        # coeff = list(self.weights.flatten())
+        # print('flatten %s' % (time.time() - start))
+        #
+        # start = time.time()
+        # coeff = dict(zip(self.lp_vars.keys(), coeff))
+        # print('zip %s' % (time.time() - start))
+        #
+        # start = time.time()
+        # obj = self.lp_vars.prod(coeff)
+        # print('prod %s' % (time.time() - start))
+        #
+        # start = time.time()
+        # self.m.setObjective(obj, GRB.MAXIMIZE)
+        # print('Time to set objective %s' % (time.time() - start))
 
         # Constraints.
         start = time.time()

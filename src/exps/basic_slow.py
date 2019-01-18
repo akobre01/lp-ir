@@ -58,6 +58,9 @@ if __name__ == "__main__":
     bm.solve()
     t = time.time() - s
 
+    print('obj')
+    print(bm.objective_val())
+
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()

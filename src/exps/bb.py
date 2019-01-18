@@ -66,6 +66,8 @@ if __name__ == "__main__":
         bb = MakespanMatcher(loads, covs, scores, makespan=ms)
     s = time.time()
     bb.solve()
+    print('obj')
+    print(bb.objective_val())
 
     t = time.time() - s
     f = open(time_file, 'w')

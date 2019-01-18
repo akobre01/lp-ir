@@ -1,0 +1,12 @@
+{
+  "dataset_name": "trapit",
+  "match_model": "bb-lb",
+  "score_f": "data/trapit/pairwise.npy",
+  "cov_f": "data/trapit/proj_loads.npy",
+  "load_f": "data/trapit/student_loads.npy",
+  "load_lb_f": "data/trapit/student_loads.npy",
+  "experiment_out_dir": "exp_out",
+  "random_seed": 2139,
+  "threads": 12,
+  "debug": false
+}

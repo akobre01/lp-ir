@@ -45,18 +45,21 @@ class BasicMatcherSlow(object):
             self.lp_vars.append([])
             for j in range(self.n_pap):
                 self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
-                                                     name=self.var_name(i, j)))
+                                                     name=self.var_name(i, j),
+                                                     obj=self.weights[i][j]))
+        self.m.update()
+        self.m.setObjective(self.m.getObjective(), GRB.MAXIMIZE)
         self.m.update()
         print('Set variables %s' % (time.time() - start))
 
         # Set the objective.
-        start = time.time()
-        obj = LinExpr()
-        for i in range(self.n_rev):
-            for j in range(self.n_pap):
-                obj += self.weights[i][j] * self.lp_vars[i][j]
-        self.m.setObjective(obj, GRB.MAXIMIZE)
-        print('Objective %s' % (time.time() - start))
+        # start = time.time()
+        # obj = LinExpr()
+        # for i in range(self.n_rev):
+        #     for j in range(self.n_pap):
+        #         obj += self.weights[i][j] * self.lp_vars[i][j]
+        # self.m.setObjective(sum(self.lp_vars), GRB.MAXIMIZE)
+        # print('Objective %s' % (time.time() - start))
 
         start = time.time()
         # Reviewer constraints.
