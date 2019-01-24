@@ -55,7 +55,7 @@ if __name__ == '__main__':
         ax.set_title('%s, Makespan=%.3f' % (config.match_model, makespan))
     ax.set_ylabel('Paper Assignment Score')
     ax.set_xlabel('Quintile')
-    ax.set_ylim(bottom=0.0)
+    ax.set_ylim(bottom=0.0, top=3.0)
     leg = ax.legend(loc='upper right', frameon=False)
 
     # Change borders, tick colors, etc.
