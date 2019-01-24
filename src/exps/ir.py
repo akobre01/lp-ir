@@ -52,17 +52,22 @@ if __name__ == "__main__":
     # Output files.
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
+    obj_file = os.path.join(output_dir, 'obj.tsv')
 
     bm = IRMakespanMatcher(loads, covs, scores, makespan=ms)
     s = time.time()
     bm.solve()
-    # bm.change_makespan(ms)
-    # bm.round_fractional()
 
     t = time.time() - s
     f = open(time_file, 'w')
     f.write(str(t))
     f.close()
+
+    print('obj')
+    print(bm.objective_val())
+
+    with open(obj_file, 'w') as f:
+        f.write(str(bm.objective_val()))
 
     makespan_file = os.path.join(output_dir, 'makespan.tsv')
     with open(makespan_file, 'w') as f:

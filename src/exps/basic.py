@@ -57,6 +57,7 @@ if __name__ == "__main__":
     # Output files.
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
+    obj_file = os.path.join(output_dir, 'obj.tsv')
 
     bm = BasicMatcher(loads, covs, scores, loads_lb=loads_lb)
     s = time.time()
@@ -65,6 +66,9 @@ if __name__ == "__main__":
 
     print('obj')
     print(bm.objective_val())
+
+    with open(obj_file, 'w') as f:
+        f.write(str(bm.objective_val()))
 
     f = open(time_file, 'w')
     f.write(str(t))
