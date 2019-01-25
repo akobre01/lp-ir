@@ -162,7 +162,7 @@ if __name__ == "__main__":
     a = [3] * np.size(ws, axis=0)
     b = [3] * np.size(ws, axis=1)
 
-    x = BasicMatcher(a, b, ws, init_makespan)
+    x = BasicMatcherSlow(a, b, ws, init_makespan)
     s = time.time()
     x.solve()
     print(time.time() - s)

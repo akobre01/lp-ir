@@ -70,9 +70,10 @@ class IRDALB(MakespanMatcher):
                              self.lub_constr_name(r))
 
         # load load bound constraints.
-        for r, load in enumerate(self.loads_lb):
-            self.m.addConstr(sum(self.lp_vars[r]) >= load,
-                             self.llb_constr_name(r))
+        if self.loads_lb is not None:
+            for r, load in enumerate(self.loads_lb):
+                self.m.addConstr(sum(self.lp_vars[r]) >= load,
+                                 self.llb_constr_name(r))
 
         # coverage constraints.
         for p, cov in enumerate(self.coverages):
