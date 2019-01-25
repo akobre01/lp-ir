@@ -33,7 +33,7 @@ if __name__ == "__main__":
     debug = config.debug
 
     # Set up output dir
-    assert(config.match_model == 'pr4a')
+    assert(config.match_model == 'pr4a' or config.match_model == 'pr4a-i1')
     config.experiment_out_dir = os.path.join(
         config.experiment_out_dir, config.dataset_name, config.match_model,
         'ms=%s' % config.makespan, ts)
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     time_file = os.path.join(output_dir, 'time.tsv')
 
     time_limit = None
-    #iter_limit = 1
-    bm = PR4A(scores, 3, 4)
+    iter_limit = config.iter_limit
+    bm = PR4A(scores, covs, loads, iter_limit=iter_limit)
     s = time.time()
     bm.fair_assignment()
     t = time.time() - s
