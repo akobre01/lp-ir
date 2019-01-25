@@ -61,9 +61,9 @@ if __name__ == "__main__":
     time_file = os.path.join(output_dir, 'time.tsv')
 
     if loads_lb is not None:
-        bb = MLLB(loads, loads_lb, covs, scores, makespan=ms)
+        bb = MLLB(loads, loads_lb, covs, scores)
     else:
-        bb = MakespanMatcher(loads, covs, scores, makespan=ms)
+        bb = MLLB(loads, np.zeros(loads.shape), covs, scores)
     s = time.time()
     bb.solve()
     print('obj')

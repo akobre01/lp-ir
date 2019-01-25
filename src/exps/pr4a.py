@@ -19,7 +19,6 @@ if __name__ == "__main__":
     config = Config(args.config)
 
     loads = np.load(config.load_f)
-    loads_lb = np.load(config.load_lb_f)
     covs = np.load(config.cov_f)
     scores = np.load(config.score_f)
     ms = config.makespan

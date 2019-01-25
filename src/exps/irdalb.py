@@ -20,7 +20,10 @@ if __name__ == "__main__":
     config = Config(args.config)
 
     loads = np.load(config.load_f)
-    loads_lb = np.load(config.load_lb_f)
+    if config.load_lb_f:
+        loads_lb = np.load(config.load_lb_f)
+    else:
+        loads_lb = None
     covs = np.load(config.cov_f)
     scores = np.load(config.score_f)
     ms = config.makespan
@@ -35,7 +38,7 @@ if __name__ == "__main__":
     debug = config.debug
 
     # Set up output dir
-    assert(config.match_model == 'irda-lb')
+    assert(config.match_model == 'irda-lb' or config.match_model == 'irda')
     config.experiment_out_dir = os.path.join(
         config.experiment_out_dir, config.dataset_name, config.match_model,
         'ms=%s' % config.makespan, ts)
@@ -54,7 +57,10 @@ if __name__ == "__main__":
     assignment_file = os.path.join(output_dir, 'assignment')
     time_file = os.path.join(output_dir, 'time.tsv')
 
-    bm = IRDALB(loads, loads_lb, covs, scores, makespan=ms)
+    if config.match_model == 'irda':
+        bm = IRDALB(loads, None, covs, scores, makespan=ms)
+    else:
+        bm = IRDALB(loads, loads_lb, covs, scores, makespan=ms)
     s = time.time()
     bm.solve()
 

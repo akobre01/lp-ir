@@ -6,16 +6,29 @@ import uuid
 
 
 class MsFlow(object):
-    """Improves the makespan value of the matching using maxflow.
+    """Approximate makespan matching via flow network..
 
-    This class tries to improve the makespan of a matching based on the
-    algorithm introduced in Gairing et. al 2004 and Gairing et. al. 2007.  Our
-    adaptation works as follows.  After we have a matching, construct three
-    groups of papers.  The first group are all papers papers whos paper scores
-    are greater than the makespan value, the second group are all papers whose
+    Approximately solve the reviewer assignment problem with makespan
+    constraint. Based on the algorithm introduced in Gairing et. al 2004 and
+    Gairing et. al. 2007.  Our adaptation works as follows.  After we have a
+    matching, construct three groups of papers.  The first group are all papers
+    with scores > makespan value, the second group are all papers whose
     papers scores are between the makespan and the makespan - maxaffinity, the
     final group are the papers whose paper scores are less than makespan -
-    maxaffinity.  For each paper in the last group, we're going to unassign the
+    maxaffinity.  For each paper in the last group, we'll unassign the
+    reviewer with the lowest score. Then, we'll construct a new flow network
+    from the papers in the first group as sources through reviewers assigned to
+    those paper and terminating in the papers in the last group. Each sink will
+    accept a single new assignment.  Once this assignment is made.  We'll
+    construct another flow network of all available reviewers to the papers that
+    do not have enough reviewers and solve the flow problem again.  Then we'll
+    have a feasible solution. We can continue to iterate this process until
+    either: there are no papers in the first group, there are no papers in the
+    third group, or running the procedure does not change the sum total score of
+    the matching.
+
+    OLD TEXT:
+    we're going to unassign the
     reviewer with the lowest score. Then, we'll construct a new flow network
     from the papers in the first group as sources through the appropriate
     reviewers and papers in the second group and ending at the papers in the
@@ -26,7 +39,7 @@ class MsFlow(object):
     continue to iterate this process until either: there are no papers in the
     third group or there are no papers in the first group.
     """
-    def __init__(self, loads, coverages, weights, sol=None, ms=0.0):
+    def __init__(self, loads, coverages, affs, sol=None, ms=0.0):
         """Initialize a makespan flow matcher
 
         Args:
@@ -43,21 +56,21 @@ class MsFlow(object):
         Returns:
             initialized makespan matcher.
         """
-        self.n_rev = np.size(weights, axis=0)
-        self.n_pap = np.size(weights, axis=1)
+        self.n_rev = np.size(affs, axis=0)
+        self.n_pap = np.size(affs, axis=1)
         self.loads = loads
         self.coverages = coverages
-        self.orig_weights = weights.copy()
-        self.weights = weights.copy()
         # make sure that all weights are positive:
-        min_weight = np.min(weights)
-        if min_weight < 0:
-            self.weights -= min_weight
+        self.orig_affs = affs.copy()
+        self.affs = affs.copy()
+        min_aff = np.min(affs)
+        if min_aff < 0:
+            self.affs -= min_aff
         self.id = uuid.uuid4()
         self.makespan = ms     # the minimum allowable paper score.
         self.solution = sol if sol else np.zeros((self.n_rev, self.n_pap))
-        assert(self.weights.shape == self.solution.shape)
-        self.maxaff = np.max(self.weights)
+        assert(self.affs.shape == self.solution.shape)
+        self.maxaff = np.max(self.affs)
         self.valid = True
 
         self.min_cost_flow = pywrapgraph.SimpleMinCostFlow()
@@ -70,8 +83,8 @@ class MsFlow(object):
         self.sink = self.n_rev + self.n_pap + 1
 
     def objective_val(self):
-        """Get the objective value of a solved lp."""
-        return np.sum(self.sol_as_mat() * self.orig_weights)
+        """Get the objective value of the RAP."""
+        return np.sum(self.sol_as_mat() * self.orig_affs)
 
     def _refresh_internal_vars(self):
         """Set start, end, caps, costs to be empty."""
@@ -98,8 +111,10 @@ class MsFlow(object):
         Returns:
             A 3-tuple of paper ids.
         """
-        paper_scores = np.sum(self.solution * self.weights, axis=0)
+        paper_scores = np.sum(self.solution * self.affs, axis=0)
         g1 = np.where(paper_scores >= self.makespan)[0]
+        # g3 = np.where(self.makespan - self.maxaff > paper_scores)[0]
+        # g2 = np.setdiff1d(np.setdiff1d(paper_scores, g1)[0], g3)[0]
         g2 = np.intersect1d(
             np.where(self.makespan > paper_scores),
             np.where(paper_scores >= self.makespan - self.maxaff))
@@ -138,7 +153,7 @@ class MsFlow(object):
             A tuple of rows and columns of the
         """
         mask = (self.solution - 1.0) * -10000
-        tmp = (mask + self.weights).astype('float')
+        tmp = (mask + self.affs).astype('float')
         worst_revs = np.argmin(tmp, axis=0)
         return worst_revs[papers], papers
 
@@ -146,9 +161,8 @@ class MsFlow(object):
         """Construct a network to make an invalid solution valid.
 
         To do this we need to ensure that:
-            1) each load lower bound is satisfied
-            2) each load upper bound is satisfied
-            3) each paper coverage constraint is satisfied.
+            1) each load upper bound is satisfied
+            2) each paper coverage constraint is satisfied.
 
         Returns:
             None -- modifies the internal min_cost_flow network.
@@ -159,7 +173,7 @@ class MsFlow(object):
         pap_caps = np.maximum(self.coverages - np.sum(self.solution, axis=0), 0)
         flow = np.sum(pap_caps)
         self._construct_graph_and_solve(self.n_rev, self.n_pap, rev_caps,
-                                        pap_caps, self.weights, flow)
+                                        pap_caps, self.affs, flow)
 
         # Finally, return.
         assert (np.all(np.sum(self.solution, axis=0) == self.coverages))
@@ -167,7 +181,7 @@ class MsFlow(object):
         self.valid = True
         return self.solution
 
-    def _construct_ms_improvement_network(self, g1, g2, g3):
+    def _construct_ms_improvement_network_old(self, g1, g2, g3):
         """Construct the network the reassigns reviewers to improve makespan.
 
         Args:
@@ -227,7 +241,7 @@ class MsFlow(object):
                         self.end_inds.append(self.n_rev + pap2)
                         self.caps.append(1)
                         self.costs.append(
-                            int(-1.0 - 10000 * self.weights[rev, pap2]))
+                            int(-1.0 - 10000 * self.affs[rev, pap2]))
                 added.add(rev)
         # For each paper in g2, reverse the flow to assigned revs.
         revs, paps2 = np.nonzero(self.solution[:, g2])
@@ -251,13 +265,112 @@ class MsFlow(object):
                     self.end_inds.append(self.n_rev + pap3)
                     self.caps.append(1)
                     self.costs.append(
-                        int(-1.0 - 10000 * self.weights[rev, pap3]))
+                        int(-1.0 - 10000 * self.affs[rev, pap3]))
 
         flow = int(min(np.size(g3), np.size(g1)))
         self.supplies = np.zeros(self.n_rev + self.n_pap + 2)
         self.supplies[self.source] = flow    #int(np.size(g3))
         self.supplies[self.sink] = -flow     #-int(np.size(g3))
 
+        for i in range(len(self.start_inds)):
+            self.min_cost_flow.AddArcWithCapacityAndUnitCost(
+                self.start_inds[i], self.end_inds[i], self.caps[i],
+                self.costs[i])
+        for i in range(len(self.supplies)):
+            self.min_cost_flow.SetNodeSupply(i, int(self.supplies[i]))
+
+    def _construct_ms_improvement_network(self, g1, g2, g3):
+        """Construct the network the reassigns reviewers to improve makespan.
+
+        Args:
+            g1 - numpy array of paper ids in group 1 (best).
+            g2 - numpy array of paper ids in group 2.
+            g3 - numpy array of paper ids in group 3 (worst).
+
+        Returns:
+            None -- modifies the internal min_cost_flow network.
+        """
+        # Must convert to python ints first.
+        g1 = [int(x) for x in g1]
+        g2 = [int(x) for x in g2]
+        g3 = [int(x) for x in g3]
+        assert(len(g1) + len(g2) + len(g3) == self.n_pap)
+        assert(not set(g1).intersection(set(g2)) and
+               not set(g1).intersection(set(g3)) and
+               not set(g2).intersection(set(g3)))
+        print(len(g1), len(g2), len(g3))
+        # First construct edges between the source and each pap in g1.
+        self._refresh_internal_vars()
+        for i in range(np.size(g1)):
+            self.start_inds.append(self.source)
+            self.end_inds.append(self.n_rev + g1[i])
+            self.caps.append(1)
+            self.costs.append(0)
+
+        # Next construct the sink node and edges to each paper in g3.
+        for i in range(np.size(g3)):
+            self.start_inds.append(self.n_rev + g3[i])
+            self.end_inds.append(self.sink)
+            self.caps.append(1)
+            self.costs.append(0)
+
+        # Now, for each assignment in the g1 group, reverse the flow.
+        revs, paps1 = np.nonzero(self.solution[:, g1])
+        added = set()
+        for i in range(np.size(revs)):
+            rev = int(revs[i])
+            pap = g1[paps1[i]]
+            assert(self.solution[rev, pap] == 1.0)
+            self.start_inds.append(self.n_rev + pap)
+            self.end_inds.append(rev)
+            self.caps.append(1)
+            # self.costs.append(int(1.0 + 10000 * self.weights[rev, pap]))
+            self.costs.append(0)
+            added.add(rev)
+
+        #     # and now connect this reviewer to each paper in g2 if that
+        #     # reviewer has not already been assigned to that paper.
+        #     if rev not in added:
+        #         for pap2 in g2:
+        #             if self.solution[rev, pap2] == 0.0:
+        #                 assert((rev, pap2) not in added)
+        #                 added.add((rev, pap2))
+        #
+        #                 self.start_inds.append(rev)
+        #                 self.end_inds.append(self.n_rev + pap2)
+        #                 self.caps.append(1)
+        #                 self.costs.append(
+        #                     int(-1.0 - 10000 * self.affs[rev, pap2]))
+        #         added.add(rev)
+        # # For each paper in g2, reverse the flow to assigned revs.
+        # revs, paps2 = np.nonzero(self.solution[:, g2])
+        # for i in range(np.size(revs)):
+        #     rev = int(revs[i])
+        #     pap = g2[paps2[i]]
+        #     assert(self.solution[rev, pap] == 1.0)
+        #     self.start_inds.append(self.n_rev + pap)
+        #     self.end_inds.append(rev)
+        #     self.caps.append(1)
+        #     # self.costs.append(int(1.0 + 10000 * self.weights[rev, pap]))
+        #     self.costs.append(1)
+        #     # TODO(AK): below??
+        #     # self.costs.append(0)
+
+        # For each rev in added, connect them to a paper in g3 if not assigned.
+        for rev in added:
+            for pap3 in g3:
+                if self.solution[rev, pap3] == 0.0:
+                    self.start_inds.append(rev)
+                    self.end_inds.append(self.n_rev + pap3)
+                    self.caps.append(1)
+                    self.costs.append(
+                        int(-1.0 - 10000 * self.affs[rev, pap3]))
+
+        flow = int(min(np.size(g3), np.size(g1)))
+        # flow = int(np.size(g3))
+        self.supplies = np.zeros(self.n_rev + self.n_pap + 2)
+        self.supplies[self.source] = flow    #int(np.size(g3))
+        self.supplies[self.sink] = -flow     #-int(np.size(g3))
         for i in range(len(self.start_inds)):
             self.min_cost_flow.AddArcWithCapacityAndUnitCost(
                 self.start_inds[i], self.end_inds[i], self.caps[i],
@@ -273,39 +386,39 @@ class MsFlow(object):
                 # Can ignore arcs leading out of source or into sink.
                 if self.min_cost_flow.Tail(arc) != self.source and \
                                 self.min_cost_flow.Head(arc) != self.sink:
-                    # head = self.min_cost_flow.Head(arc)
-                    # tail = self.min_cost_flow.Tail(arc)
-                    # if head > self.n_rev:
-                    #     pap = head - self.n_rev
-                    #     rev = tail
-                    #     # print(pap, rev)
-                    #     # assert(self.solution[rev, pap] == 1.0)
-                    #     self.solution[rev, pap] = 0.0
-                    #     num_un += 1
-                    # else:
-                    #     rev = head
-                    #     pap = tail - self.n_rev
-                    #     # assert(self.solution[rev, pap] == 0.0)
-                    #     self.solution[rev, pap] = 1.0
+                    # flow goes from tail to head
+                    head = self.min_cost_flow.Head(arc)
+                    tail = self.min_cost_flow.Tail(arc)
+                    if head > self.n_rev:
+                        pap = head - self.n_rev
+                        rev = tail
+                        assert(self.solution[rev, pap] == 0.0)
+                        self.solution[rev, pap] = 0.0
+                        num_un += 1
+                    else:
+                        rev = head
+                        pap = tail - self.n_rev
+                        assert(self.solution[rev, pap] == 1.0)
+                        self.solution[rev, pap] = 1.0
 
-                    if self.min_cost_flow.Flow(arc) > 0:
-
-                        if self.min_cost_flow.UnitCost(arc) > 0:
-                            pap = self.min_cost_flow.Tail(arc) - self.n_rev
-                            rev = self.min_cost_flow.Head(arc)
-                            print(self.min_cost_flow.Head(arc), self.min_cost_flow.Tail(arc), self.min_cost_flow.UnitCost(arc))
-                            assert(self.solution[rev, pap] == 1.0)
-                            self.solution[rev, pap] = 0.0
-                            num_un += 1
-                        elif self.min_cost_flow.UnitCost(arc) < 0:
-                            rev = self.min_cost_flow.Tail(arc)
-                            pap = self.min_cost_flow.Head(arc) - self.n_rev
-                            assert(self.solution[rev, pap] == 0.0)
-                            self.solution[rev, pap] = 1.0
-                        else:
-                            assert(False)
+                    # if self.min_cost_flow.Flow(arc) > 0:
+                    #
+                    #     if self.min_cost_flow.UnitCost(arc) > 0:
+                    #         pap = self.min_cost_flow.Tail(arc) - self.n_rev
+                    #         rev = self.min_cost_flow.Head(arc)
+                    #         print(self.min_cost_flow.Head(arc), self.min_cost_flow.Tail(arc), self.min_cost_flow.UnitCost(arc))
+                    #         assert(self.solution[rev, pap] == 1.0)
+                    #         self.solution[rev, pap] = 0.0
+                    #         num_un += 1
+                    #     elif self.min_cost_flow.UnitCost(arc) < 0:
+                    #         rev = self.min_cost_flow.Tail(arc)
+                    #         pap = self.min_cost_flow.Head(arc) - self.n_rev
+                    #         assert(self.solution[rev, pap] == 0.0)
+                    #         self.solution[rev, pap] = 1.0
+                    #     else:
+                    #         assert(False)
             assert (np.sum(self.solution) == np.sum(self.coverages))
-            print('NUM UNASSIGNED %d' % num_un)
+            # print('NUM UNASSIGNED %d' % num_un)
             self.valid = False
         else:
             raise Exception('There was an issue with the min cost flow input.')
@@ -324,6 +437,7 @@ class MsFlow(object):
                         assert(np.sum(self.solution[:, pap], axis=0) ==
                                self.coverages[pap] - 1)
                         self.solution[rev, pap] = 1.0
+            assert np.all(np.sum(self.solution, axis=1) <= self.loads)
             assert (np.sum(self.solution) == np.sum(self.coverages))
             self.valid = True
         else:
@@ -452,11 +566,11 @@ class MsFlow(object):
             Highest feasible makespan value found.
         """
         mn = 0.0
-        mx = np.max(self.weights) * np.max(self.coverages)
+        mx = np.max(self.affs) * np.max(self.coverages)
         # ms = (mx - mn) / 2.0
         best = mx
         best_worst_pap_score = 0.0
-        for ms in np.arange(mn, mx + mx/20.0, mx / 20.0):
+        for ms in np.arange(mn, mx + mx/100.0, mx / 100.0):
             print('ITERATION ms %s' % ms)
             self.makespan = ms
             can_improve, s1, s3 = self.try_improve_ms()
@@ -466,7 +580,7 @@ class MsFlow(object):
                 prev_s1, prev_s3 = s1, s3
                 can_improve, s1, s3 = self.try_improve_ms()
                 num_itrs += 1
-            worst_pap_score = np.min(np.sum(self.solution * self.weights,
+            worst_pap_score = np.min(np.sum(self.solution * self.affs,
                                             axis=0))
             print('best worst paper score %s worst score %s' % (best_worst_pap_score, worst_pap_score) )
             if worst_pap_score > best_worst_pap_score:
