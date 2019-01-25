@@ -44,6 +44,9 @@ class Config(object):
         self.threads = 12
         self.debug = False
 
+        # PR4A Paramters
+        self.iter_limit = np.inf
+
         if filename:
             self.__dict__.update(json.load(open(filename)))
         self.random = random.Random(self.random_seed)

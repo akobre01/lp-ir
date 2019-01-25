@@ -20,8 +20,9 @@ class auto_assigner:
         self.simmatrix = simmatrix
         self.numrev = simmatrix.shape[0]
         self.numpapers = simmatrix.shape[1]
-        self.ability = ability
-        self.demand = demand
+        self.ability = list(ability)
+        assert(np.min(demand) == np.max(demand))
+        self.demand = demand[0]
         self.function = function
         if iter_limit < 1:
             raise ValueError('Maximum number of iterations must be at least 1')
@@ -213,7 +214,7 @@ class auto_assigner:
 
         # One iteration of Steps 2 to 7 of the algorithm
         while not_assigned != set() and iter_counter < self.iter_limit and (time.time() < start_time + self.time_limit or iter_counter == 0):
-            
+            print('#info iteration %s' % iter_counter)
             iter_counter += 1
             
             lower_bound = 0
@@ -222,6 +223,7 @@ class auto_assigner:
             # Step 2
             for kappa in range(1, self.demand + 1):
                 # Step 2(a)
+                print('#info kappa %s' % kappa)
                 tmp_abilities = local_abilities.copy()
                 tmp_simmatrix = local_simmatrix.copy()
 
