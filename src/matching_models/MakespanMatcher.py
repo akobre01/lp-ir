@@ -53,21 +53,36 @@ class MakespanMatcher(object):
 
         self.ms_constr_prefix = "ms"
 
-        # primal variables
-        self.lp_vars = []
-        for i in range(self.n_rev):
-            self.lp_vars.append([])
-            for j in range(self.n_pap):
-                self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
-                                                     name=self.var_name(i, j)))
-        self.m.update()
+        # # primal variables
+        # self.lp_vars = []
+        # for i in range(self.n_rev):
+        #     self.lp_vars.append([])
+        #     for j in range(self.n_pap):
+        #         self.lp_vars[i].append(self.m.addVar(vtype=GRB.BINARY,
+        #                                              name=self.var_name(i, j)))
+        # self.m.update()
+        #
+        # # Set the objective.
+        # obj = LinExpr()
+        # for i in range(self.n_rev):
+        #     for j in range(self.n_pap):
+        #         obj += self.weights[i][j] * self.lp_vars[i][j]
+        # self.m.setObjective(obj, GRB.MAXIMIZE)
 
-        # Set the objective.
-        obj = LinExpr()
-        for i in range(self.n_rev):
-            for j in range(self.n_pap):
-                obj += self.weights[i][j] * self.lp_vars[i][j]
-        self.m.setObjective(obj, GRB.MAXIMIZE)
+        # Primal vars.
+        start = time.time()
+        coeff = list(self.weights.flatten())
+        print('flatten %s' % (time.time() - start))
+        self.lp_vars = self.m.addVars(self.n_rev, self.n_pap, vtype=GRB.BINARY,
+                                      name='x', obj=coeff)
+        self.m.update()
+        print('Time to add vars %s' % (time.time() - start))
+
+        # Objective.
+        start = time.time()
+        self.m.setObjective(self.m.getObjective(), GRB.MAXIMIZE)
+        self.m.update()
+        print('Time to set objective %s' % (time.time() - start))
 
         # Reviewer constraints.
         for r, load in enumerate(self.loads):
@@ -98,7 +113,7 @@ class MakespanMatcher(object):
         for c in self.m.getConstrs():
             if c.getAttr("ConstrName").startswith(self.ms_constr_prefix):
                 self.m.remove(c)
-                self.m.update()
+                # self.m.update()
 
         for p in range(self.n_pap):
             self.m.addConstr(sum([self.lp_vars[i][p] * self.weights[i][p]

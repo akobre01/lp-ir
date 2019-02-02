@@ -49,6 +49,7 @@ class IRDALB(MakespanMatcher):
         self.round_constr_prefix = 'round'
 
         # primal variables
+        start = time.time()
         self.lp_vars = []
         for i in range(self.n_rev):
             self.lp_vars.append([])
@@ -56,14 +57,18 @@ class IRDALB(MakespanMatcher):
                 self.lp_vars[i].append(self.m.addVar(ub=1.0,
                                                      name=self.var_name(i, j)))
         self.m.update()
+        print('Time to add vars %s' % (time.time() - start))
 
+        start = time.time()
         # set the objective
         obj = LinExpr()
         for i in range(self.n_rev):
             for j in range(self.n_pap):
                 obj += self.weights[i][j] * self.lp_vars[i][j]
         self.m.setObjective(obj, GRB.MAXIMIZE)
+        print('Time to set obj %s' % (time.time() - start))
 
+        start = time.time()
         # load upper bound constraints.
         for r, load in enumerate(self.loads):
             self.m.addConstr(sum(self.lp_vars[r]) <= load,
@@ -87,6 +92,7 @@ class IRDALB(MakespanMatcher):
                                   for i in range(self.n_rev)]) >= self.makespan,
                              self.ms_constr_name(p))
         self.m.update()
+        print('Time to add constr %s' % (time.time() - start))
 
     def ms_constr_name(self, p):
         """Name of the makespan constraint for paper p."""
@@ -137,7 +143,10 @@ class IRDALB(MakespanMatcher):
         ms = mx
         best = None
         self.change_makespan(ms)
+        # self.change_makespan(16.65)
+        start = time.time()
         self.m.optimize()
+        print('Time to solve %s' % (time.time() - start))
         for i in range(10):
             print('ITERATION %s ms %s' % (i, ms))
             if self.m.status == GRB.INFEASIBLE:
@@ -149,8 +158,15 @@ class IRDALB(MakespanMatcher):
                 best = ms
                 mn = ms
                 ms += (mx - ms) / 2.0
+            print('starting change_makespan')
+            start = time.time()
             self.change_makespan(ms)
+            print('Time to change makespan %s' % (time.time() - start))
+            print('starting optimize')
+            start = time.time()
             self.m.optimize()
+            print('Time to solve %s' % (time.time() - start))
+            print('ending optimize')
         print('Best found %s' % best)
         return best
 
@@ -171,13 +187,14 @@ class IRDALB(MakespanMatcher):
             The solution as a matrix.
         """
         # TODO(AK)): Does this even do anything?
-        for c in self.m.getConstrs():
-            if c.ConstrName.startswith(self.round_constr_prefix):
-                print("SURPRISE! REMOVING A CONSTRAINT: %s" % str(c))
-                self.m.remove(c)
-                assert(False)
+        # for c in self.m.getConstrs():
+        #     if c.ConstrName.startswith(self.round_constr_prefix):
+        #         print("SURPRISE! REMOVING A CONSTRAINT: %s" % str(c))
+        #         self.m.remove(c)
+        #         assert(False)
 
         ms = self.find_ms()
+        # ms = 16.65
         self.change_makespan(ms)
 
         begin_opt = time.time()
@@ -264,21 +281,22 @@ class IRDALB(MakespanMatcher):
                         integral_assignments[i][j] = sol[self.var_name(i, j)]
 
             # First try to elim a makespan constraint.
+            removed = False
             for (paper, frac_vars) in frac_assign_p.items():
-                if len(frac_vars) == 2:
+                if len(frac_vars) == 2 or len(frac_vars) == 3:
                     for c in self.m.getConstrs():
                         if c.ConstrName == self.ms_constr_name(paper):
                             self.m.remove(c)
-                            self.m.update()
-                            print("REMOVED CONSTRAINT ON PAPER %s" % paper)
+                            removed = True
 
             # If necessary remove a load constraint.
-            for (rev, frac_vars) in frac_assign_r.items():
-                if len(frac_vars) == 2:
-                    for c in self.m.getConstrs():
-                        if c.ConstrName == self.lub_constr_name(rev) or \
-                                c.ConstrName == self.llb_constr_name(rev):
-                            self.m.remove(c)
-                    self.m.update()
+            if not removed:
+                for (rev, frac_vars) in frac_assign_r.items():
+                    if len(frac_vars) == 2:
+                        for c in self.m.getConstrs():
+                            if c.ConstrName == self.lub_constr_name(rev) or \
+                                    c.ConstrName == self.llb_constr_name(rev):
+                                self.m.remove(c)
+            self.m.update()
             return self.round_fractional(integral_assignments, log_file,
                                          count + 1)
